@@ -172,6 +172,7 @@ export class ActorLayer {
       const p = fitPlacement(r.pads, r.headingDeg, (de, dn) => ground(r.e + de, r.n + dn), { maxTiltDeg: 25 })
       if (p.z < PLACEMENT_INVALID_Z) return // ground not ready yet, try later
       r.placed = p
+      this.placeVer++
       r.rev = patchRevision
       r.root.position.set(r.e, p.z, -r.n)
       r.root.quaternion.copy(attitudeQuat(p))
@@ -210,6 +211,9 @@ export class ActorLayer {
     }
   }
   private sunElev = 0.2
+  /** What the shadow map was last drawn for (see render), and a counter bumped whenever a rover is placed or moved. */
+  private shadowKey = ''
+  private placeVer = 0
 
   // Lays a soft shadow patch on the ground, stretched away from the Sun.
   private placeBlob(s: Shadow, e: number, n: number, z: number, lengthM: number): void {
@@ -235,8 +239,10 @@ export class ActorLayer {
     cam.matrixAutoUpdate = false
     cam.matrixWorld.makeBasis(r, u, k).setPosition(enu(view.pos.x, view.pos.y, view.pos.z))
     cam.matrixWorldInverse.copy(cam.matrixWorld).invert()
-    // Redraw the rovers' shadows every frame.
-    renderer.shadowMap.needsUpdate = true
+    // The rovers' shadow map is redrawn only when the Sun, the nearest rover or a placement changed (the depth from a still Sun is the same every frame).
+    const vis = this.rovers.map((r) => (r.root.visible ? 1 : 0)).join('')
+    const key = `${this.sun.position.x.toFixed(3)},${this.sun.position.y.toFixed(3)},${this.sun.position.z.toFixed(3)}|${this.shadowFocus}|${this.placeVer}|${vis}|${this.sun.castShadow ? 1 : 0}`
+    if (key !== this.shadowKey) { renderer.shadowMap.needsUpdate = true; this.shadowKey = key }
     renderer.render(this.scene, cam)
   }
 

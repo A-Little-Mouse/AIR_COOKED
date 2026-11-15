@@ -62,7 +62,7 @@ export const APOLLO17_ALSEP: ApolloPanorama = {
   },
   tiers: [
     {
-      id: 'desktop', width: 14608, height: 1665, bytes: 3660256,
+      id: 'desktop', width: 14608, height: 1665, bytes: 3274862,
       tiles: [
         { path: '/panorama/alsep/desktop/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 16 },
         { path: '/panorama/alsep/desktop/t1.webp', x0: 4096, width: 4096, padLeft: 16, padRight: 16 },
@@ -71,7 +71,7 @@ export const APOLLO17_ALSEP: ApolloPanorama = {
       ],
     },
     {
-      id: 'phone', width: 8192, height: 934, bytes: 1460426,
+      id: 'phone', width: 8192, height: 934, bytes: 1313850,
       tiles: [
         { path: '/panorama/alsep/phone/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 16 },
         { path: '/panorama/alsep/phone/t1.webp', x0: 4096, width: 4096, padLeft: 16, padRight: 0 },
@@ -111,7 +111,7 @@ export const APOLLO17_STATION4: ApolloPanorama = {
   },
   tiers: [
     {
-      id: 'desktop', width: 15409, height: 2044, bytes: 2285650,
+      id: 'desktop', width: 15409, height: 2044, bytes: 1734740,
       tiles: [
         { path: '/panorama/station4/desktop/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 16 },
         { path: '/panorama/station4/desktop/t1.webp', x0: 4096, width: 4096, padLeft: 16, padRight: 16 },
@@ -120,14 +120,14 @@ export const APOLLO17_STATION4: ApolloPanorama = {
       ],
     },
     {
-      id: 'phone', width: 8192, height: 1087, bytes: 944876,
+      id: 'phone', width: 8192, height: 1087, bytes: 689176,
       tiles: [
         { path: '/panorama/station4/phone/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 16 },
         { path: '/panorama/station4/phone/t1.webp', x0: 4096, width: 4096, padLeft: 16, padRight: 0 },
       ],
     },
     {
-      id: 'compact', width: 4096, height: 543, bytes: 287886,
+      id: 'compact', width: 4096, height: 543, bytes: 215222,
       tiles: [
         { path: '/panorama/station4/compact/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 0 },
       ],
@@ -160,7 +160,7 @@ export const APOLLO17_STATION6: ApolloPanorama = {
   },
   tiers: [
     {
-      id: 'desktop', width: 11182, height: 1725, bytes: 1218318,
+      id: 'desktop', width: 11182, height: 1725, bytes: 895042,
       tiles: [
         { path: '/panorama/station6/desktop/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 16 },
         { path: '/panorama/station6/desktop/t1.webp', x0: 4096, width: 4096, padLeft: 16, padRight: 16 },
@@ -168,14 +168,14 @@ export const APOLLO17_STATION6: ApolloPanorama = {
       ],
     },
     {
-      id: 'phone', width: 6144, height: 948, bytes: 468892,
+      id: 'phone', width: 6144, height: 948, bytes: 306548,
       tiles: [
         { path: '/panorama/station6/phone/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 16 },
         { path: '/panorama/station6/phone/t1.webp', x0: 4096, width: 2048, padLeft: 16, padRight: 0 },
       ],
     },
     {
-      id: 'compact', width: 4096, height: 632, bytes: 230082,
+      id: 'compact', width: 4096, height: 632, bytes: 158420,
       tiles: [
         { path: '/panorama/station6/compact/t0.webp', x0: 0, width: 4096, padLeft: 0, padRight: 0 },
       ],
