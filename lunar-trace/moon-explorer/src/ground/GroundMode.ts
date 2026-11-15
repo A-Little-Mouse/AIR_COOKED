@@ -68,7 +68,7 @@ export class GroundMode {
   private actorsRequested = false
   /** The rover's stand: Apollo 17 Station 1, 'LRV / center station 1' of the Haase et al. control points (a measured rover stop); its heading is a guess. */
   static readonly ROVER_STATION = { lon: 30.7865324, lat: 20.1569035, headingDeg: 105 }
-  /** The second rover, in frame metres east and north of the module, and the bearing its front points to (a guess). */
+  /** The second rover's spot (metres east and north of the module) and heading. */
   static readonly ROVER_2 = { e: 5, n: -8, headingDeg: 300 }
   /** The lunar module once its model has loaded and been set on the ground. */
   lm: LunarModule | null = null
@@ -262,13 +262,23 @@ export class GroundMode {
 
   /** Loads the NASA model and sets it on the fused ground (needs the ground pass ready: the patch loaded). The mesh code is a separate chunk. */
   /** Loads the astronaut and the rover (once). */
+  /**
+   * Lunar Trace: the Apollo 17 landing flight draws no rover and loads none; the rover (1.4 MB) comes with the ordinary Apollo 17 views.
+   * `setRoverEnabled(true)` starts its load the first time the ground view is wanted without the landing.
+   */
+  private roverEnabled = true
+  setRoverEnabled(on: boolean): void {
+    this.roverEnabled = on
+    this.actors.hidden = !on
+    if (on && this.lm) this.loadActors()
+  }
   loadActors(): void {
-    if (this.actorsRequested) return
+    if (!this.roverEnabled || this.actorsRequested) return
     this.actorsRequested = true
     const st = GroundMode.ROVER_STATION
     const [re, rn] = offsetEN(LM_HAASE.lon, LM_HAASE.lat, st.lon, st.lat) // Haase frame: the frame's origin is the module in it
     this.actors.setRoverSite(re, rn, st.headingDeg)
-    // A second rover of the same model, near the module (a few metres south-east of it, across the camera's eye-level view): Relict's addition, not a measured stop (Apollo 17 carried one rover).
+    // A second rover near the module: our addition (Apollo 17 had one).
     const near = GroundMode.ROVER_2
     this.actors.addRoverSite(near.e, near.n, near.headingDeg)
   }
@@ -291,6 +301,12 @@ export class GroundMode {
     this.cam.onInput?.()
     this.probeCache.clear()
     return true
+  }
+
+  /** Lunar Trace: docks the command module on the loaded lander for the landing film (a no-op when it is there already or the file is missing). */
+  async loadCsm(): Promise<void> {
+    const base = import.meta.env.BASE_URL
+    await this.lm?.loadCsm(`${base}actors/apollo-csm.glb`, `${base}${LM_DRACO_DIR}`).catch((err) => console.warn('Command module unavailable:', (err as Error).message))
   }
 
   async loadLm(e: Ephemeris, aspect: number): Promise<void> {

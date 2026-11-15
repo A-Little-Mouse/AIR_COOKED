@@ -3,7 +3,7 @@ import { PROCESSED_BY, RENDERING_MODEL_CREDIT } from '../branding'
 
 export type CreditId =
   | 'moon-base' | 'lunar-tiles' | 'polar-wac' | 'jaxa-tc' | 'apollo-11' | 'apollo-17' | 'apollo-17-tier' | 'apollo-17-flight'
-  | 'lunar-module' | 'earth-maps' | 'hyg-stars' | 'astronomy-engine' | 'modelled-light'
+  | 'lunar-module' | 'apollo-csm' | 'earth-maps' | 'hyg-stars' | 'astronomy-engine' | 'modelled-light'
   | 'gazetteer' | 'apollo-17-panoramas' | 'open-source'
 
 export interface CreditEntry {
@@ -77,6 +77,13 @@ export const CREDIT_CATALOG: readonly CreditEntry[] = [
     credit: 'NASA 3D Resources; model by Michael D. Carbajal',
     detail: 'NASA’s generic Apollo Lunar Module model is used; it is not a model of LM-12.',
     links: [{ label: 'NASA Apollo Lunar Module model', href: 'https://science.nasa.gov/3d-resources/apollo-lunar-module/' }, { label: 'NASA media usage guidelines', href: 'https://www.nasa.gov/nasa-brand-center/images-and-media/' }],
+  },
+  {
+    // Lunar Trace: the command module in the landing film. CC BY 3.0 requires this credit wherever the model is shown.
+    id: 'apollo-csm', title: 'Command and service module model',
+    credit: '"Apollo 3D: Command Module and Service Module Block 2" by mesapilgrim (Blend Swap), CC BY 3.0',
+    detail: 'The exterior of a generic Apollo Block 2 command and service module, reduced from the original model (interior, tanks and launch-escape tower removed). It is not Apollo 17\'s own craft, America, and carries none of its markings. It appears docked on the lander at the start of the Apollo 17 landing.',
+    links: [{ label: 'Blend Swap: Apollo 3D Command Module and Service Module Block 2', href: 'http://www.blendswap.com/blends/view/46564' }, { label: 'Creative Commons Attribution 3.0', href: 'https://creativecommons.org/licenses/by/3.0/' }],
   },
   {
     id: 'earth-maps', title: 'Earth maps',

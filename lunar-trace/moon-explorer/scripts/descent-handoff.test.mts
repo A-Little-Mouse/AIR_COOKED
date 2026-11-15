@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { Vector3 } from 'three'
 import { DescentPath, HANDOVER_T, type TrackDoc } from '../src/descent/DescentPath.ts'
-import { DescentFlight, HANDOVER_MS, HANDOFF_T, siteRadius } from '../src/descent/flight.ts'
+import { DescentFlight, LT_START_T, HANDOVER_MS, HANDOFF_T, siteRadius } from '../src/descent/flight.ts'
 import { ephemerisAt } from '../src/ephemeris.ts'
 import { frameAxes, makeSiteFrame, viewFromGround } from '../src/ground/frame.ts'
 import type { ViewCamera } from '../src/camera/pose.ts'
@@ -20,7 +20,7 @@ const axesAt = (t: number) => frameAxes(ephemerisAt(new Date(path.utcMsAt(t))), 
 
 function run(groundZ: ((e: number, n: number) => number | null) | null) {
   const f = new DescentFlight(path)
-  const rigCam: ViewCamera = viewFromGround(axesAt(HANDOVER_T), { pos: new Vector3(0, -800000, 400000), headingDeg: 20, pitchDeg: -30, rollDeg: 0, tanHalf: 0.27 })
+  const rigCam: ViewCamera = viewFromGround(axesAt(LT_START_T), { pos: new Vector3(0, -800000, 400000), headingDeg: 20, pitchDeg: -30, rollDeg: 0, tanHalf: 0.27 })
   f.begin(rigCam, 0)
   const dt = 1 / 60
   let nowMs = 0, prev: ViewCamera | null = null, prevRegime = f.regime

@@ -10,7 +10,6 @@ export function dimFactor(avgAlbedo: number): number {
   return avgAlbedo <= MAX_ALBEDO ? 1 : Math.max(MIN_DIM, MAX_ALBEDO / avgAlbedo);
 }
 
-// Perceived brightness of a colour.
 const lum = (r: number, g: number, b: number) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 const textureCache = new WeakMap<THREE.Texture, number>();
 

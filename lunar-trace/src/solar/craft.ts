@@ -3,7 +3,6 @@ import type { BodyDef } from './bodies.ts';
 
 const DEG = Math.PI / 180;
 
-// Builds the data for one lander.
 const lander = (id: string, name: string, parent: string, model: string, radiusKm: number, latDeg: number, lonDeg: number, site: string, info: string): BodyDef => ({
   id, name, type: 'lander', model: `/models/${model}.glb`, radiusKm, parent, pole: { ra: 0, dec: 90 }, rotationHours: 0, viewRadii: 4, labelRangeKm: parent === 'moon' ? 6e4 : 2.5e5,
   craft: { kind: 'surface', latDeg, lonDeg }, info,
@@ -28,7 +27,7 @@ export const CRAFT_BODIES: BodyDef[] = [
     'Flew the first powered, controlled flight on another planet in April 2021, then kept flying for almost three years.'),
 ];
 
-// Turns a latitude and longitude into a direction on Mars (the Mars model is turned 180° so it lines up).
+// Turns a latitude and longitude into a direction on Mars (its model is turned 180°).
 export function surfaceDirection(_parentId: string, latDeg: number, lonDeg: number, out: THREE.Vector3): THREE.Vector3 {
   const lat = latDeg * DEG, lon = lonDeg * DEG, c = Math.cos(lat);
   return out.set(-c * Math.cos(lon), Math.sin(lat), c * Math.sin(lon));

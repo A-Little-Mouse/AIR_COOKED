@@ -11,7 +11,8 @@
  * interpolated between those (I) or modelled (E), and `unc` carries the band the track builder computed. Horizontal speed and
  * downrange are modelled in every row (E): no source read has them.
  */
-import { Quaternion } from 'three'
+import { Matrix4, Quaternion, Vector3 } from 'three'
+import { COAST_T0, ApproachPath, JOIN_T } from './approach'
 
 export type Engine = 'coast' | 'ullage' | 'minimum' | 'full' | 'throttled' | 'off'
 export type ProvCode = 'V' | 'R' | 'I' | 'E'
@@ -112,6 +113,23 @@ function slerp(a: number[], b: number[], k: number): [number, number, number, nu
   return [qa.w, qa.x, qa.y, qa.z]
 }
 
+/** The site sphere's radius, metres (the track's frame.site_radius_m): the Moon's centre is this far below the frame's origin. */
+const SITE_RADIUS_M = 1734774
+
+/** The local-vertical, local-horizontal frame at a position and velocity (site frame, metres): X along the horizontal velocity, Z up from the Moon's centre, Y completing it. */
+function lvlh(pos: number[], vel: number[]): Quaternion {
+  const up = new Vector3(pos[0], pos[1], pos[2] + SITE_RADIUS_M).normalize()
+  const v = new Vector3(vel[0], vel[1], vel[2])
+  const fwd = v.addScaledVector(up, -v.dot(up)).normalize()
+  const left = new Vector3().crossVectors(up, fwd)
+  return new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(fwd, left, up))
+}
+
+/** Seconds the pair takes to turn from the burn attitude to the descent attitude after the join, and the turn (about the lvlh Y axis, the short way round: 198 degrees is the same as -162). */
+const FLIP_S = 60
+const BURN_TURN_RAD = -162 * Math.PI / 180
+const smoothstep01 = (x: number): number => { const u = Math.max(0, Math.min(1, x)); return u * u * (3 - 2 * u) }
+
 interface Knot { t: number; p: [number, number, number]; v: [number, number, number]; alt: number }
 
 export class DescentPath {
@@ -145,7 +163,8 @@ export class DescentPath {
     knots.push({ t: 0, p: [p.E_m[0], p.N_m[0], p.U_m[0]], v: [p.vE_ms[0], p.vN_ms[0], p.vU_ms[0]], alt: p.alt_m[0] })
     for (let i = 1; i < knots.length; i++) if (!(knots[i].t > knots[i - 1].t)) throw new Error('orbit rows are not increasing in time')
     this.knots = knots
-    this.tMin = knots[0].t
+    // Lunar Trace: the path begins at the arrival (a modelled approach, descent/approach.ts); the track's own orbit rows take over at JOIN_T
+    this.tMin = COAST_T0
     this.tMax = p.t_s[p.t_s.length - 1]
     this.cols = {
       alt: new Column(p.alt_m), pad: new Column(p.pad_alt_m), dust: new Column(p.dust_index), thrust: new Column(p.thrust_N), thr: new Column(p.throttle_of_ftp), mass: new Column(p.mass_kg),
@@ -160,7 +179,10 @@ export class DescentPath {
       return m
     }
     this.slopes = { E: lim(p.E_m, p.vE_ms), N: lim(p.N_m, p.vN_ms), U: lim(p.U_m, p.vU_ms) }
+    const j = this.sampleOrbit(JOIN_T, this.utcMsAt(JOIN_T))
+    this.approach = new ApproachPath({ pos: j.pos, vel: j.vel }, SITE_RADIUS_M)
   }
+  private readonly approach: ApproachPath
 
   static fromDoc(doc: TrackDoc): DescentPath { return new DescentPath(doc) }
 
@@ -178,6 +200,7 @@ export class DescentPath {
     const t = clamp(tIn, this.tMin, this.tMax)
     const p = this.p
     const utcMs = this.utcMsAt(t)
+    if (t < JOIN_T) return this.sampleApproach(t, utcMs)
     if (t < 0) return this.sampleOrbit(t, utcMs)
     const i = Math.min(Math.floor(t), p.t_s.length - 2), s = t - i
     const pos: [number, number, number] = [
@@ -202,6 +225,14 @@ export class DescentPath {
     }
   }
 
+  /** The modelled arrival (before JOIN_T): the approach path's position and velocity, the attitude of the docked pair burning forward, the rest as in the orbit. */
+  private sampleApproach(t: number, utcMs: number): DescentSample {
+    const base = this.sampleOrbit(JOIN_T, this.utcMsAt(JOIN_T))
+    const a = this.approach.sample(t)
+    const alt = Math.hypot(a.pos[0], a.pos[1], a.pos[2] + SITE_RADIUS_M) - 1737400
+    return { ...base, t, utcMs, pos: a.pos, vel: a.vel, altAgl: alt, padAlt: alt, quat: this.coastAttitude(t, a.pos, a.vel) }
+  }
+
   private sampleOrbit(t: number, utcMs: number): DescentSample {
     const K = this.knots
     let lo = 0, hi = K.length - 1
@@ -217,7 +248,7 @@ export class DescentPath {
     return {
       t, utcMs, pos, vel,
       altAgl: hermite(a.alt, b.alt, (b.alt - a.alt) / h, (b.alt - a.alt) / h, h, s), padAlt: hermite(a.alt, b.alt, (b.alt - a.alt) / h, (b.alt - a.alt) / h, h, s),
-      quat: slerp(p.quat_wxyz[0], p.quat_wxyz[0], 0),
+      quat: this.coastAttitude(t, pos, vel),
       psiDeg: p.psi_deg[0], yawLeftDeg: p.yaw_left_deg[0],
       engine: ullage ? 'ullage' : 'coast', thrustN: 0, throttleOfFtp: 0, massKg: p.mass_kg[0], dust: 0, attitudeKnown: false,
       // Orbit rows carry a 10 km altitude band (LOG: the pre-DOI-2 perilune is 8 km off); attitude before ullage is not a source value.
@@ -225,6 +256,26 @@ export class DescentPath {
       prov: { alt: 'E', vv: 'E', vh: 'E', pos: 'E', att: 'E', thr: 'E', dust: 'E' },
     }
   }
+
+  /**
+   * The attitude before ignition. No source gives it; the track holds the ignition attitude fixed in the site frame, which is fixed against the SURFACE and so makes
+   * the module turn against the horizon once every orbit (a docked pair seen at a time-lapse would appear to spin). Here the module holds the same attitude against the
+   * LOCAL horizon and velocity direction instead (a modelled choice, flagged unknown like the rest): it is exactly the ignition attitude at t = 0, and in between it
+   * follows the orbit's turn, so against the horizon it does not move.
+   */
+  private coastAttitude(t: number, pos: number[], vel: number[]): [number, number, number, number] {
+    const q0 = this.p.quat_wxyz[0]
+    const ign = new Quaternion(q0[1], q0[2], q0[3], q0[0]).normalize()
+    this.lvlh0 ??= lvlh([this.p.E_m[0], this.p.N_m[0], this.p.U_m[0]], [this.p.vE_ms[0], this.p.vN_ms[0], this.p.vU_ms[0]])
+    // The module's attitude against the local horizon (the ignition attitude: its top, with the descent engine below it, 108 degrees from vertical, tilted backward). Before JOIN_T the docked pair
+    // is burning its main engine FORWARD (the engine is at the command module's far end, on the lander's top side), so it is turned end for end about the horizontal axis across the track;
+    // from JOIN_T it turns back over FLIP_S seconds to the ignition attitude (the turn-around between the orbit insertion and the descent, modelled).
+    const k = t <= JOIN_T ? 1 : t >= JOIN_T + FLIP_S ? 0 : 1 - smoothstep01((t - JOIN_T) / FLIP_S)
+    const turn = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), BURN_TURN_RAD * k)
+    const q = lvlh(pos, vel).multiply(turn).multiply(this.lvlh0.clone().invert()).multiply(ign)
+    return [q.w, q.x, q.y, q.z]
+  }
+  private lvlh0: Quaternion | null = null
 
   /** Runs of constant provenance per quantity, for the HUD's verified / estimated wording. */
   bands(): ProvBand[] {

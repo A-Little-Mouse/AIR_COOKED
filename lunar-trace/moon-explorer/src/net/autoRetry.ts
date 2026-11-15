@@ -4,7 +4,7 @@
  */
 
 /** The waits (ms) before the 1st, 2nd and 3rd automatic try. Each try is a whole load with the loader's own retries (about 8.5 s), so the third starts about 4 + 8.5 + 12 + 8.5 + 30 = 63 s after the first failure. */
-export const PATCH_AUTO_RETRY_MS = [4000, 12000, 30000, 60000, 60000] // Relict: two more, longer waits: the Apollo 17 view is about 120 MB, which a slow or dropping connection needs several goes at
+export const PATCH_AUTO_RETRY_MS = [4000, 12000, 30000, 60000, 60000] // Relict: five tries, the last two 60 s apart (the Apollo 17 view is about 120 MB)
 /** When the visitor is busy at the moment a try is due, look again after this. */
 export const AUTO_RETRY_BUSY_MS = 3000
 

@@ -153,7 +153,7 @@ import { mountTouchControls, type TouchControlsApi } from './ui/touchControls'
 import { homeFollowStep } from './camera/homeFollow'
 import { heightAboveSurfaceM, tapeLimitPulse, tapeWakeAllowed } from './ui/zoomScale'
 import { windowAvailable } from './ui/flight'
-import { DescentPath, HANDOVER_T } from './descent/DescentPath'
+import { DescentPath } from './descent/DescentPath'
 import { descentReached } from './descent/reach'
 import { landingPose } from './descent/landing'
 import { descentRenderPose } from './descent/renderPose'
@@ -162,7 +162,8 @@ import { LM_DRACO_DIR, LM_MODEL_FILE, discardLanderPreload, lmMaterialLite, mome
 import { ARRIVAL_HANDOVER_U, ARRIVAL_HOLD_MAX_MS, ARRIVAL_WAIT_MS, arrivalGlideMs, arrivalHoldPose, arrivalPatchDemand, directArrival, enuOfPose, holdLevelsWanted, landingHoldStalled, landingReady, poseVelocityENU } from './descent/arrival'
 import { SITE_APEX_DIST, SITE_FUNNEL_DIST, descentDetailResident, floorGuard, funnelAim, gatedU, guardedAim, siteApexDist, stepGate } from './descent/siteDrop'
 import { canDrawFinalOnly, DATE_CROSSFADE_MS, dateChangeCrossfades } from './journey/dateTransition'
-import { DescentFlight, type FlightFrame, SETTLE_BLEND_S, SETTLE_END_T, HANDOFF_T, lmPoseOf, siteRadius } from './descent/flight'
+import { APPROACH_T0, BURN_T0 } from './descent/approach'
+import { DescentFlight, LT_START_T, LT_UNDOCK_T, type FlightFrame, SETTLE_BLEND_S, SETTLE_END_T, HANDOFF_T, lmPoseOf, siteRadius } from './descent/flight'
 import type { DescentPath as DescentPathT } from './descent/DescentPath'
 import { enuDir, groundBasis, lonLatAtOffset } from './ground/frame'
 import { RIDGE_SITE, RIDGE_TIME, type Observer, observerAt, skyState } from './ridge/observer'
@@ -2743,8 +2744,8 @@ const timedHandles = {
 let flightWasPlaying = false
 const flightHandle: JourneyHandle = {
   id: 'flight', label: 'Powered descent',
-  get: () => (flight ? (flight.t - HANDOVER_T) / Math.max(1, flight.path.tMax - HANDOVER_T) : 0),
-  set: (u) => { if (flight) { flight.seek(HANDOVER_T + clamp01(u) * (flight.path.tMax - HANDOVER_T)); markMoved() } },
+  get: () => (flight ? (flight.t - LT_START_T) / Math.max(1, flight.path.tMax - LT_START_T) : 0),
+  set: (u) => { if (flight) { flight.seek(LT_START_T + clamp01(u) * (flight.path.tMax - LT_START_T)); markMoved() } },
   freeze: (on) => {
     if (!flight) return
     if (on) { flightWasPlaying = flight.playing; flight.playing = false } else flight.playing = flightWasPlaying && !flight.ended
@@ -4649,11 +4650,20 @@ function goViewpoint(kind: 'hover' | 'eye'): void {
 let flightPath: DescentPath | null = null
 let flightHeldByStop = false
 
+/** Lunar Trace: at the click, the lander, the command module and the descent track start loading behind the landing's own start-up (the site data), so the film does not wait on them. */
+function prepareLanding(): void {
+  const g = ensureGround()
+  g?.setRoverEnabled(false)
+  void g?.loadLm(ephem, canvasAspect()).then(() => g.loadCsm()).catch(() => undefined)
+  void DescentPath.load().then((p) => { flightPath ??= p }).catch(() => undefined)
+}
 async function startFlight(seq: number): Promise<void> {
   moonSurfaceTurn.stopInertia()
   declareExposureCut()
   const g = ensureGround()
   if (!g) return
+  g.setRoverEnabled(false) // Lunar Trace: no rover in the landing
+  flightCaptionAt = -1
   flightPath ??= await DescentPath.load()
   if (seq !== playSeq) return
   if (groundMode?.active) { leaveGround(false, () => { void startFlight(seq) }); return }
@@ -4662,11 +4672,12 @@ async function startFlight(seq: number): Promise<void> {
   // A fly view over the site to blend from (the Earth view is 400,000 km away).
   const startCam = last?.cam ?? rig.camera(ephem, aspect, now)
   declareExposureCut()
-  time = new Date(path.utcMsAt(HANDOVER_T))
+  time = new Date(path.utcMsAt(LT_START_T))
   live = false
   ephem = clockSet(time)
-  flightEphemMs = path.utcMsAt(HANDOVER_T)
+  flightEphemMs = path.utcMsAt(LT_START_T)
   await g.loadLm(ephem, aspect).catch((e) => console.warn('Lunar module unavailable:', (e as Error).message))
+  await g.loadCsm() // the command module docked on the lander's top (a no-op once loaded)
   if (seq !== playSeq || !g.lm) return
   targets.setDepth(true)
   rig.frozen = true
@@ -4681,8 +4692,6 @@ async function startFlight(seq: number): Promise<void> {
   stepFlight(performance.now(), 0)
   markMoved()
 }
-// Keep the archived flight implementation available in source without a visitor entry point.
-void startFlight
 
 /** Ends the flight. Silent (another moment starts): back to the rig at once. Otherwise the camera stays where the flight left it, in ground mode when it is there. */
 function stopFlight(silent: boolean): void {
@@ -4695,6 +4704,8 @@ function stopFlight(silent: boolean): void {
   flightFrame = null
   flightEphemMs = -1
   const g = groundMode
+  g?.lm?.setCsmOffset(null)
+  g?.lm?.setCsmPlume(0)
   g?.lm?.setPlume(false, 0)
   if (g?.lm) g.placeLm()
   settle = !silent && f.ended && g?.active && g.lm ? { path: f.path, t: HANDOFF_T } : null
@@ -4711,10 +4722,24 @@ function stopFlight(silent: boolean): void {
   markMoved()
 }
 
+/** The film's captions, each shown once when the track time reaches it (the approach and the undocking are modelled, and the captions say so). */
+const FLIGHT_CAPTIONS: readonly { t: number; title: string; text: string }[] = [
+  { t: LT_START_T, title: 'The coast to the Moon', text: 'America and Challenger, docked, have been coasting from Earth for about three days; the last hours are shown. (The path is modelled, and arrives from the far side; this project has no data for it.)' },
+  { t: APPROACH_T0, title: 'Apollo 17 arrives at the Moon', text: 'The pair falls toward the Moon and its engine is about to fire. (Modelled.)' },
+  { t: BURN_T0, title: 'Lunar orbit insertion', text: 'The command module’s main engine fires to slow the pair into orbit. (In reality it burned for about 6 minutes, and much higher up.)' },
+  { t: LT_UNDOCK_T, title: 'Undocking', text: 'Challenger separates from America. (Shown minutes before the descent; the real undocking came 2 h 21 min earlier.)' },
+  { t: -20, title: 'Powered descent', text: 'Challenger’s descent engine fires. From here the path is the real track, to touchdown at 19:54:58 UTC on 11 December 1972.' },
+]
+let flightCaptionAt = -1
 function stepFlight(now: number, dt: number): boolean {
   const f = flight, gm = groundMode
   if (!f || !gm || flightHeldByStop) return false
   f.advance(dt)
+  if (!f.blending) {
+    let k = -1
+    FLIGHT_CAPTIONS.forEach((c, i) => { if (f.t >= c.t) k = i })
+    if (k !== flightCaptionAt && k >= 0) { flightCaptionAt = k; caption.show(FLIGHT_CAPTIONS[k].title, FLIGHT_CAPTIONS[k].text) }
+  }
   const ms = f.path.utcMsAt(f.t)
   if (Math.abs(ms - flightEphemMs) > 200) { time = new Date(ms); ephem = clockSet(time); flightEphemMs = ms }
   const ready = !!gm.lm
@@ -4761,6 +4786,8 @@ function applyFlightToModule(gm: GroundMode, fr: FlightFrame, preExpose: number,
   if (!lm) return
   const s = fr.sample
   if (ground) gm.setFlight(fr.lm.pos, fr.lm.quat, s.padAlt < 3)
+  lm.setCsmOffset(flight ? flight.csmOffset() : null)
+  lm.setCsmPlume(flight ? flight.burn() : 0)
   lm.setPlume(flightPlume, s.engine === 'off' || s.engine === 'coast' || s.engine === 'ullage' ? 0 : s.throttleOfFtp)
   const rb = ground ? new THREE.Vector3() : fr.view.pos
   if (!ground) lm.setFlightPose(fr.lm.pos, fr.lm.quat, rb)
@@ -5875,6 +5902,8 @@ function prefetchLanderAssets(preload = false): void {
   })
 }
 function playMoment(m: Moment, instant = false, afterLoad = false): void {
+  // Lunar Trace: every view except the landing flight gets the rover back (a no-op until the ground view is open and near it).
+  if (m.camera.at !== 'descent') groundMode?.setRoverEnabled(true)
   moonSurfaceTurn.stopInertia()
   // A moment that does not land beside the module frees one a replaced moment preloaded (GPU memory); the preload also frees itself after a minute untaken.
   if (!afterLoad && !momentNeedsLander(m)) void discardLanderPreload()
@@ -5961,7 +5990,7 @@ function playMoment(m: Moment, instant = false, afterLoad = false): void {
       climb = (tween as FlyTween | null)?.plan.ms ?? 0
       climb += 100
       markMoved()
-    } else approachSite(PATCH_SITES[m.needsPatch], m, instant)
+    } else if (m.camera.at !== 'descent') approachSite(PATCH_SITES[m.needsPatch], m, instant) // (the landing's lander starts elsewhere: no flight to the site first)
     const wanted = m.needsPatch
     void new Promise((r) => setTimeout(r, climb)).then(() => seq === playSeq ? ensurePatch(wanted) : undefined).then(() => { if (seq === playSeq) playMoment(m, instant, true) })
     notifyProgress(true)
@@ -5996,8 +6025,13 @@ function playMoment(m: Moment, instant = false, afterLoad = false): void {
     carryDate(shownBefore, instant)
     return
   }
-  // The archived powered-descent source is retained, but no visitor moment starts it.
-  if (cam.at === 'descent') return
+  // Lunar Trace: the Apollo 17 landing, from lunar orbit to touchdown on the real descent track (src/descent/).
+  if (cam.at === 'descent') {
+    clearMomentUrl()
+    caption.show('The coast to the Moon', 'America and Challenger, docked, have been coasting from Earth for about three days; the last hours are shown. (The path is modelled; this project has no data for it.)')
+    void startFlight(seq).catch((e: unknown) => { console.warn('Landing could not start:', e); caption.show('The landing could not start', 'Check your connection and try again.') })
+    return
+  }
   descent = null
   const cinema = getFlight(m)
   if (cinema) {
@@ -6297,6 +6331,8 @@ function runNavAction(a: NavAction, opts?: { resume?: boolean; replay?: boolean 
   switch (a.kind) {
     case 'pin': { const h = hotspotList.find((x) => x.id === a.id); if (h) playPin(h); break }
     case 'moment':
+      // Lunar Trace: the landing waits for the site's data first; say so at once, so a click is never silent.
+      if (a.id === 'land-like-apollo17') { caption.show('Apollo 17 landing', 'Loading the landing site…'); prepareLanding() }
       // The caption under the pill describes a place; a flight or a view of another entry does not share it.
       if (pinShown && navApi?.state().entries[navApi.state().state.pos?.entry ?? -1]?.id !== pinShown.h.id) { pinShown = null; caption.clear() }
       toursApi?.open(a.id); resumeRequest = null; break
@@ -6766,7 +6802,9 @@ function goHome(at?: Date): void {
   pendingLanding = null
   cancelRoute()
   stopMoments()
-  if (groundMode?.active) { leaveGround(false, () => goHome(at)); return }
+  // Lunar Trace: from the ground the way out is the straight climb over the lander, looking down (the 'over the site' glide), so the pull-back to the whole Moon starts from a clean overhead view,
+  // not from a low, tilted pose that the long fly-to then has to untangle.
+  if (groundMode?.active) { leaveGround(false, () => goHome(at), true); return }
   clearAutoRetry()
   const now = performance.now()
   bar?.closeSheets()

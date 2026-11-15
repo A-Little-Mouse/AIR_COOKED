@@ -389,4 +389,7 @@ export const ARCHIVED_MOMENTS: Moment[] = [{
   needsTier: true,
 }]
 
+// Lunar Trace: the real-clock Apollo 17 descent, from lunar orbit to touchdown, is offered again (the Places list's "Apollo 17 landing").
+MOMENTS.push(...ARCHIVED_MOMENTS)
+
 export const momentById = (id: string): Moment | undefined => MOMENTS.find((m) => m.id === id)

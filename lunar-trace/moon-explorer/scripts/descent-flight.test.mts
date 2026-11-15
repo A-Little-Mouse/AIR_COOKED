@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { Quaternion, Vector3 } from 'three'
 import { DescentPath, HANDOVER_T, type TrackDoc } from '../src/descent/DescentPath.ts'
-import { DescentFlight, GROUND_ENTER_M, HANDOFF_T, HANDOVER_MS, SETTLE_BLEND_S, SETTLE_END_T, SHADOW_DIR, WINDOW, CHASE_COAST, coastK, blendCamera, chaseView, localUp, shadowRoom, lmPoseOf, modelQuaternion, siteRadius, windowView } from '../src/descent/flight.ts'
+import { DescentFlight, LT_FILM_S, LT_POWER_X, LT_SEGMENTS, LT_START_T, GROUND_ENTER_M, HANDOFF_T, HANDOVER_MS, SETTLE_BLEND_S, SETTLE_END_T, SHADOW_DIR, WINDOW, CHASE_COAST, coastK, blendCamera, chaseView, localUp, shadowRoom, lmPoseOf, modelQuaternion, siteRadius, windowView } from '../src/descent/flight.ts'
 import { ephemerisAt } from '../src/ephemeris.ts'
 import { attitudeQuat, fitPlacement } from '../src/ground/lmPlacement.ts'
 import { LM_REPORTED_PITCH_DEG, LM_REPORTED_ROLL_DEG } from '../src/ground/site17.ts'
@@ -30,7 +30,7 @@ const report: string[] = []
     assert.equal(s.engine, P.engine[i]); assert.equal(s.utcMs, Date.parse(P.utc[i]))
   }
   assert.equal(path.sample(-1e9).t, path.tMin); assert.equal(path.sample(1e9).t, path.tMax)
-  assert.equal(path.tMin, -8517); assert.equal(path.tMax, 732); assert.equal(path.contactT, 725)
+  assert.equal(path.tMin, LT_START_T); assert.equal(path.tMax, 732); assert.equal(path.contactT, 725)
   assert.equal(path.sample(725).utcMs, Date.parse('1972-12-11T19:54:58Z'))
 }
 
@@ -68,9 +68,10 @@ const report: string[] = []
   const a = path.sample(-0.001), b = path.sample(0)
   assert.ok(Math.hypot(b.pos[0] - a.pos[0], b.pos[1] - a.pos[1], b.pos[2] - a.pos[2]) < 3, 'orbit to powered seam')
   // Before ignition nothing claims a source: attitude is held and marked, the orbit is modelled.
-  const o = path.sample(-990)
+  const o = path.sample(-250)
   assert.equal(o.attitudeKnown, false); assert.equal(o.prov.pos, 'E'); assert.equal(o.engine, 'coast'); assert.equal(path.sample(-5).engine, 'ullage')
-  assert.ok(path.sample(-990).altAgl > 15000 && path.sample(-990).altAgl < 25000, `20 km at the hand-over: ${path.sample(-990).altAgl}`)
+  assert.ok(path.sample(-250).altAgl > 10000 && path.sample(-250).altAgl < 20000, `about 15 km up four minutes before ignition: ${path.sample(-250).altAgl}`)
+  assert.ok(path.sample(-300).altAgl > 8000 && path.sample(-300).altAgl < 16000, `the arrival's path ends at the join, about 12 km up: ${path.sample(-300).altAgl}`)
 }
 
 // 4. Provenance: the bands cover every second exactly once per quantity, and horizontal speed is modelled everywhere (no source has it).
@@ -166,7 +167,7 @@ const envAt = (t: number, nowMs = 1e9, ground: ((e: number, n: number) => number
 // 8. The hand-over from the orbital rig: no step larger than the blend allows, the end of the blend equals the flight camera, and the clock is held.
 {
   const f = new DescentFlight(path)
-  const e0 = envAt(HANDOVER_T)
+  const e0 = envAt(LT_START_T)
   const rigView = { pos: new Vector3(0, -800000, 400000), headingDeg: 20, pitchDeg: -30, rollDeg: 0, tanHalf: 0.27 }
   const rigCam: ViewCamera = viewFromGround(e0.axes, rigView)
   f.begin(rigCam, 0)
@@ -178,14 +179,14 @@ const envAt = (t: number, nowMs = 1e9, ground: ((e: number, n: number) => number
   f.begin(rigCam, 0)
   for (let ms = 16; ms <= HANDOVER_MS; ms += 16) {
     f.advance(0.016)
-    assert.equal(f.t, HANDOVER_T, 'clock held during the blend')
+    assert.equal(f.t, LT_START_T, 'clock held during the blend')
     const c = f.evaluate({ ...e0, nowMs: ms }).cam
     maxPos = Math.max(maxPos, c.pos.distanceTo(prev.pos)); maxAng = Math.max(maxAng, Math.acos(Math.min(1, c.back.dot(prev.back))) * DEG); maxFov = Math.max(maxFov, Math.abs(Math.log(c.tanHalf / prev.tanHalf)))
     prev = c
   }
   report.push(`hand-over from the rig: ${(total * 1737.4).toFixed(0)} km blended over ${HANDOVER_MS / 1000} s, largest frame step ${(maxPos * 1737400).toFixed(0)} m, ${maxAng.toFixed(2)} deg, field ${(maxFov * 100).toFixed(2)} %`)
-  assert.ok(maxPos < total * 0.0035, `position step ${maxPos} of ${total}`)   // smoothstep peak slope 1.5 per blend, 625 frames
-  assert.ok(maxAng < 1, `orientation step ${maxAng}`)
+  assert.ok(maxPos < total * 0.03, `position step ${maxPos} of ${total}`)   // a log-scale zoom: a few per cent of the distance per frame at most, never a rush
+  assert.ok(maxAng < 2, `orientation step ${maxAng}`) // Lunar Trace: the blend is 2 s, so a frame turns up to about 1.4 degrees (was 10 s, under 1)
   const after = f.evaluate({ ...e0, nowMs: HANDOVER_MS + 1 })
   assert.ok(!after.blending)
   const flightCam = viewFromGround(e0.axes, after.view)
@@ -201,6 +202,7 @@ const envAt = (t: number, nowMs = 1e9, ground: ((e: number, n: number) => number
 //    camera inherits at contact and at rest is the flight camera's, position, orientation and field, exactly.
 {
   const f = new DescentFlight(path)
+  f.sinceUndock = 100 // the ordinary chase camera: the docked-pair view has long since eased away
   let tGround = NaN
   f.t = HANDOVER_T
   for (let t = HANDOVER_T; t <= 732; t += 1) {
@@ -238,20 +240,25 @@ const envAt = (t: number, nowMs = 1e9, ground: ((e: number, n: number) => number
   near(f.evaluate(envAt(300, 1e9, () => 1.3)).lm.pos.z, f.evaluate(envAt(300, 1e9, () => 0)).lm.pos.z, 1e-9, 'no terrain offset high up')
 }
 
-// 10. The clock: 16x to ignition minus 20 s and then true time; fixed rates; playback stops at the hand-off; scrubbing clamps.
+// 10. The clock (Lunar Trace): the flight starts at the arrival, follows the schedule (LT_SEGMENTS) with a short lag, slows to the powered descent at -20 s and to the last approach at 640 s;
+//     fixed rates; playback stops at the hand-off; scrubbing clamps.
 {
   const f = new DescentFlight(path)
   f.begin({ pos: new Vector3(), right: new Vector3(1, 0, 0), up: new Vector3(0, 1, 0), back: new Vector3(0, 0, 1), tanHalf: 0.27 }, 0)
-  f.evaluate({ ...envAt(HANDOVER_T), nowMs: HANDOVER_MS + 5 })
-  assert.equal(f.speed(), 16)
+  assert.equal(f.t, LT_START_T, 'the flight starts at the arrival')
+  f.evaluate({ ...envAt(LT_START_T), nowMs: HANDOVER_MS + 5 })
+  assert.equal(f.speed(), (LT_SEGMENTS[0].t1 - LT_SEGMENTS[0].t0) / LT_SEGMENTS[0].s, 'the approach rate')
   let steps = 0
   while (f.t < -20 && steps++ < 1e5) f.advance(1 / 60)
-  assert.equal(f.t, -20); assert.equal(f.speed(), 1)
-  report.push(`fast-forward from ${HANDOVER_T} s to -20 s takes ${(steps / 60).toFixed(0)} s of playback`)
-  f.advance(1); near(f.t, -19, 1e-9, 'true time from -20')
-  f.rate = 4; f.advance(1); near(f.t, -15, 1e-9, 'x4')
+  assert.equal(f.t, -20); near(f.speed(), LT_POWER_X, 1e-6, 'powered rate at -20')
+  const toIgnition = LT_SEGMENTS.filter((g) => g.t1 <= -20).reduce((a, g) => a + g.s, 0)
+  near(steps / 60, toIgnition, 2.0, 'the clock reaches -20 s after the parts that come before it')
+  report.push(`from ${LT_START_T} s to -20 s takes ${(steps / 60).toFixed(1)} s of playback (the schedule: ${toIgnition} s)`)
+  f.advance(1); near(f.t, -20 + LT_POWER_X, LT_POWER_X * 0.1, 'powered speed from -20')
+  f.t = -20; f.rate = 4; f.advance(1); near(f.t, -16, 1e-9, 'x4')
   f.seek(1e9); assert.equal(f.t, 732); f.advance(1); assert.equal(f.t, 732); assert.equal(f.ended, true)
-  f.seek(-1e9); assert.equal(f.t, -8517)
+  f.seek(-1e9); assert.equal(f.t, LT_START_T)
+  assert.ok(LT_FILM_S > 30 && LT_FILM_S < 55)
 }
 
 // 11. The real 1972 Sun: the clock the flight sets is the track's, and the Sun the ephemeris gives at contact is the one in the file.
@@ -306,6 +313,7 @@ console.log('descent-flight.test: ok')
 {
   near(coastK(-990), 1, 1e-12, 'full trailing pose in the coast'); near(coastK(-20), 0, 1e-12, 'in at 20 s before ignition'); near(coastK(0), 0, 1e-12, 'unchanged from ignition')
   const fl = new DescentFlight(path)
+  fl.sinceUndock = 100 // the ordinary trailing view: the docked-pair view has eased away
   for (const t of [-990, -700]) {
     fl.t = t
     const fr = fl.evaluate(envAt(t))

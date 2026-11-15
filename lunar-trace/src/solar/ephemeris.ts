@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { BODY_BY_ID, type BodyDef } from './bodies.ts';
 
-// Works out where Mars, Phobos and Deimos are at any date, using NASA/JPL's simple orbit formulas. Units are km.
+// Works out where Mars, Phobos and Deimos are at any date, in km.
 export const AU_KM = 149_597_870.7;
 export const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
 const DAY_MS = 86_400_000;
@@ -20,11 +20,8 @@ const MARS_MOONS: Record<string, { a: number; e: number; periodDays: number }> =
   deimos: { a: 23_463, e: 0.00033, periodDays: 1.26244 },
 };
 
-// Time since the year 2000, in centuries.
 const centuries = (ms: number) => (ms - J2000_MS) / (DAY_MS * 36525);
-// Time since the year 2000, in days.
 const days = (ms: number) => (ms - J2000_MS) / DAY_MS;
-// Works out an orbit value at a given time.
 const at = (r: Rate, T: number) => r[0] + r[1] * T;
 
 // Solves Kepler's equation, which turns time into position along an orbit.
@@ -51,7 +48,6 @@ function perifocalToScene(xp: number, yp: number, I: number, w: number, node: nu
 
 interface Orbit { a: number; e: number; I: number; w: number; node: number; M: number }
 
-// Looks up the orbit of a body at a given time.
 function orbitOf(id: string, ms: number): Orbit | null {
   const T = centuries(ms);
   const el = PLANETS[id];
@@ -64,7 +60,6 @@ function orbitOf(id: string, ms: number): Orbit | null {
 }
 
 const poleCache = new Map<string, THREE.Vector3>();
-// Returns the direction a body's north pole points.
 export function poleVector(def: BodyDef): THREE.Vector3 {
   const c = poleCache.get(def.id);
   if (c) return c;
@@ -102,7 +97,6 @@ export function localPosition(def: BodyDef, ms: number, out: THREE.Vector3): THR
   return out.set(0, 0, 0);
 }
 
-// Returns how far a body has spun at a given time.
 export function spinAngle(def: BodyDef, ms: number): number {
   const d = days(ms);
   const turns = (d * 24) / def.rotationHours;

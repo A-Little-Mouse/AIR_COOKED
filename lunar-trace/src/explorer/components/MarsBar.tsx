@@ -10,7 +10,6 @@ export default function MarsBar({ places, selectedId, labels, onSelect, onHome, 
 }) {
   const [open, setOpen] = useState(false);
   const [credits, setCredits] = useState(false);
-  // Removes focus from a button after it is clicked.
   const blur = (e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.blur();
 
   return (

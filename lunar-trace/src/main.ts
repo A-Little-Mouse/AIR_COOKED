@@ -2,10 +2,8 @@ import './style.css';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
-// Where the realistic Moon lives on this site.
 const MOON_URL = '/moon/';
 
-// Draws the home page: the headline and buttons over the Moon, plus the Mars slide.
 function renderShell() {
   app.innerHTML = `
     <iframe id="moon-bg" class="moon-bg" title="The Moon" tabindex="-1" aria-hidden="true"></iframe>
@@ -47,7 +45,7 @@ function renderShell() {
 
 
 
-// Returns true for weak devices (no WebGL2, data saver, slow network, little memory) that should skip the live Moon and Mars.
+// Returns true for weak devices that should skip the live Moon and Mars.
 function lowEndDevice(): boolean {
   try {
     const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean; effectiveType?: string } };
@@ -75,7 +73,6 @@ function startMoonBackground(): Promise<void> {
     send({ type: 'lt-bg', on: false });
     send({ type: 'lt-home' }); // pull the camera back to show the whole Moon
   };
-  // Goes back to the home page: controls hide and the headline returns.
   const goHome = () => {
     send({ type: 'lt-bg', on: true });
     send({ type: 'lt-moment', id: 'earthrise-bg' });
@@ -101,7 +98,7 @@ function startMoonBackground(): Promise<void> {
 
 const MARS_MODELS = ['mars', 'phobos', 'deimos', 'craft/landers-rovers/viking-lander', 'craft/landers-rovers/sojourner-rover', 'craft/landers-rovers/spirit-opportunity-rover', 'craft/landers-rovers/insight-lander', 'craft/landers-rovers/ingenuity-helicopter'];
 const MARS_FRAME_URL = '/explorer.html?world=mars&bg=1#/mars';
-// Starts the Mars system behind the home page, and handles View Mars, View Moon and Explore Mars.
+// Starts Mars behind the home page and handles its buttons.
 function startMars(afterMs: number) {
   const body = document.body;
   let frame: HTMLIFrameElement | null = null, frameReady = false, onMars = false, busy = false;
@@ -114,11 +111,9 @@ function startMars(afterMs: number) {
     document.body.appendChild(frame);
     for (const m of MARS_MODELS) void fetch(`/models/${m}.glb`).catch(() => undefined); // download early so they're cached
   };
-  // Sends a message to the Mars frame.
   const send = (m: object) => frame?.contentWindow?.postMessage(m, location.origin);
   // Shows the Mars frame once it is ready and the Mars slide is open.
   const syncFrame = () => frame?.classList.toggle('ready', frameReady && onMars);
-  // Switches between the Moon slide and the Mars slide.
   const showMars = (on: boolean) => {
     onMars = on;
     body.classList.toggle('on-mars', on);

@@ -8,22 +8,18 @@ export interface BodyDef {
   name: string;
   type: BodyType;
   model: string;
-  // Size of the body, in km.
   radiusKm: number;
   // The body it orbits (null for the Sun and Mars).
   parent: string | null;
   // Which way its north pole points.
   pole: { ra: number; dec: number };
-  // Hours for one spin.
   rotationHours: number;
   // How far the camera stops from it, in body radii.
   viewRadii: number;
   // Moons only: labels show when the camera is this close to the planet (km).
   labelRangeKm?: number;
   info: string;
-  // Landers only: where it stands.
   craft?: CraftSite;
-  // Extra facts to show (landers).
   facts?: Array<[string, string]>;
 }
 

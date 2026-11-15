@@ -22,3 +22,7 @@ The interface credits NASA’s 3D Resources hub and keeps the model links availa
 - **Mars ground scenes** (`src/solar/marsSurface.ts`) are illustrative: procedural terrain and rocks, with the landing sites real.
 - **The Moon** is the realistic Moon in `moon-explorer/` (see its `DATA-LICENSES.md`).
 - **Spacecraft gallery** (`/gallery.html`): the models in `public/models/craft/` and the videos in `public/videos/`.
+
+## Apollo command and service module (added)
+
+- `assets/source-models/modules/apollo-csm.glb`: the exterior of the Apollo command and service module, exported and reduced (Draco, about 54,000 triangles, 0.6 MB) from "Apollo 3D: Command Module and Service Module Block 2" by **mesapilgrim** (Blend Swap, Creative Commons Attribution 3.0; licence text kept in `assets/source-models/modules/Apollo 3D Command Module and Service Module  Block 2/BLENDSWAP_LICENSE.txt`). Credit to mesapilgrim is required wherever it is shown. The interior, the tanks and the launch-escape tower were removed. It is a generic Block 2 craft, not Apollo 17's own.

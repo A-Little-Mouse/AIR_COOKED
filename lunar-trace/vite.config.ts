@@ -5,12 +5,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { connect } from 'node:net';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 
-/**
- * The realistic Moon (./moon-explorer, built on 3D Moon by SkyLumi Labs, AGPL-3.0) is served at /moon/ on this same server.
- *   MOON_DEV_MODE=built   (default) its production build is served from moon-explorer/dist, and kept up to date by `vite build --watch`. One port, no second server.
- *   MOON_DEV_MODE=server  the old way: its dev server runs on its own port (MOON_DEV_PORT, 5192) and /moon/ is proxied to it.
- *   MOON_DEV_AUTOSTART=0  start nothing (serve whatever is already there / proxy to whatever is already running).
- */
+// Serves the Moon app at /moon/ (see MOON_DEV_MODE and MOON_DEV_AUTOSTART).
 const MODE = process.env.MOON_DEV_MODE === 'server' ? 'server' : 'built';
 const MOON_DIR = resolve(__dirname, 'moon-explorer');
 const MOON_DIST = join(MOON_DIR, 'dist');
@@ -21,7 +16,7 @@ const MOON_MIRROR = process.env.MOON_MIRROR ?? 'https://storage.googleapis.com/s
 /** The data the Moon streams at run time: its tile sets on the public mirror (same as scripts/build-moon.mjs). */
 const moonBuildEnv = (): NodeJS.ProcessEnv => ({
   ...process.env,
-  NODE_ENV: 'production', // this server runs with NODE_ENV=development; the Moon's build must not inherit it (it would ship the dev-only code)
+  NODE_ENV: 'production', // the Moon must build as production, not inherit this dev server's mode
   VITE_MOON_TILES: `${MOON_MIRROR}tiles/`, VITE_MOON_PATCH: `${MOON_MIRROR}patch/`, VITE_MOON_MID_PATCH: `${MOON_MIRROR}mid-patch/`,
   VITE_MOON_TC: `${MOON_MIRROR}tc/v3/`, VITE_MOON_HORIZONS: `${MOON_MIRROR}horizons/baked-a/`,
 });
@@ -71,7 +66,7 @@ function moonBuilt(): Plugin {
         }
         if (!existsSync(file) || !statSync(file).isFile()) { res.statusCode = 404; res.end('not found'); return; }
         const st = statSync(file);
-        // Revalidate cheaply: the same file asked again (the lunar module is fetched by the prefetch, the preload and the loader) answers 304, not the whole body.
+        // Answer repeat requests for the same file with a cheap 304.
         const lastModified = st.mtime.toUTCString();
         res.setHeader('Last-Modified', lastModified);
         res.setHeader('Cache-Control', 'no-cache');

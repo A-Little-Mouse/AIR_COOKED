@@ -6,9 +6,9 @@ import { HIDDEN_ENTRIES, PIN_MOMENT, VIEWPOINT_ENTRIES as all, availableEntries,
 import { shortLine } from '../src/ui/viewpointCards.ts'
 
 const hotspotIds = new Set(HOTSPOTS.map((h) => h.id))
-assert.deepEqual(all.map((e) => e.name), ['Apollo 17', 'Apollo 11', 'Apollo 12', 'Apollo 14', 'Apollo 15', 'Apollo 16'])
+assert.deepEqual(all.map((e) => e.name), ['Apollo 17', 'Apollo 17 landing', 'Apollo 11', 'Apollo 12', 'Apollo 14', 'Apollo 15', 'Apollo 16'])
 assert.equal(new Set(all.map((e) => e.id)).size, all.length, 'unique row ids')
-assert.deepEqual(all.map((e) => e.steps.length), [4, 1, 1, 1, 1, 1], 'Apollo 17 has its eye level and three panoramas; the rest are one flight')
+assert.deepEqual(all.map((e) => e.steps.length), [4, 1, 1, 1, 1, 1, 1], 'Apollo 17 has its eye level and three panoramas; the rest are one flight')
 const entry = (name: string): NavEntry => all.find((e) => e.name === name)!
 for (const n of ['Apollo 11', 'Apollo 12', 'Apollo 14', 'Apollo 15', 'Apollo 16']) {
   const id = `pin-apollo${n.split(' ')[1]}`
@@ -24,7 +24,7 @@ assert.deepEqual(HIDDEN_ENTRIES.map((e) => e.id), ['alps-ridge'], 'the Alps ridg
 
 // stepping: Next goes through Apollo 17's steps, then wraps to Apollo 11; Back is the reverse
 const a17 = all.findIndex((e) => e.name === 'Apollo 17')
-assert.deepEqual(nextPos(all, { entry: a17, step: 3 }), { entry: 1, step: 0 }, 'after the last panorama Next moves on to Apollo 11')
+assert.deepEqual(nextPos(all, { entry: a17, step: 3 }), { entry: 1, step: 0 }, 'after the last panorama Next moves on to the landing')
 assert.deepEqual(nextPos(all, { entry: all.length - 1, step: 0 }), { entry: 0, step: 0 }, 'the list is a ring: the last step wraps to the first entry')
 assert.deepEqual(prevPos(all, { entry: 0, step: 0 }), { entry: all.length - 1, step: 0 })
 assert.deepEqual(nextPos(all, null), { entry: 0, step: 0 })

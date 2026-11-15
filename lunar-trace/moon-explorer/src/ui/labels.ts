@@ -131,8 +131,9 @@ export function labelSpreadFromSearch(search: string): boolean {
 }
 
 /** Mounts the layer. `initiallyOn` from ?labels=1. `fast` (default: not `?labelfast=0`) writes only changed values, in device pixels, and reads no layout inside a frame. `spread` (default: not `?labelspread=0`) fills short cells over the Moon disc. */
-/** Lunar Trace: only the lunar missions are drawn by the Labels button. */
+// Relict: the Labels button draws only Apollo landing sites.
 const MISSIONS_ONLY = true
+const isApollo = (l: { kind: string; id: string }): boolean => l.kind === 'mission' && l.id.startsWith('apollo-')
 
 export function mountLabels(root: HTMLElement, host: LabelsHost, initiallyOn = false, fast = labelFastFromSearch(typeof location === 'undefined' ? '' : location.search), thin = labelThinFromSearch(typeof location === 'undefined' ? '' : location.search), spread = labelSpreadFromSearch(typeof location === 'undefined' ? '' : location.search)): {
   update(f: LabelsFrame): void; prepareFrame(): void; isOn(): boolean; setOn(on: boolean): void; visibleIds(): string[]; onChange(cb: (on: boolean) => void): void; debug(): unknown; stats(): { stepMs: number; cand: number; place: number; dom: number; n: number; drawn: number }
@@ -497,7 +498,7 @@ export function mountLabels(root: HTMLElement, host: LabelsHost, initiallyOn = f
       if (gazPick) rows.push(...gazPick.rows)
     } else { gazPick = null; gazNeedsReconciliation = false }
     // Lunar Trace: the Labels button shows the lunar missions only (the landing and impact sites), not the seas, craters and ranges.
-    if (MISSIONS_ONLY) { const keep = rows.filter((r) => r.kind === 'mission'); rows.length = 0; rows.push(...keep) }
+    if (MISSIONS_ONLY) { const keep = rows.filter(isApollo); rows.length = 0; rows.push(...keep) }
     // Order within a tier: the major names by fame (curated.ts FAME), the line last; the others larger first, missions by outcome.
     const order = (l: ShownLabel): number => {
       const fame = FAME.indexOf(l.id)
@@ -509,6 +510,7 @@ export function mountLabels(root: HTMLElement, host: LabelsHost, initiallyOn = f
      * still offered, marked `fill` (postLayout.ts centreFill: it joins only when the candidate's cell is short of names); with
      * `forceFill` (the centre pick's Gazetteer rows) it is a fill even where its tier would admit it, so the fill's gate holds. */
     const offer = (l: ShownLabel, fillable: boolean, forceFill = false): void => {
+      if (MISSIONS_ONLY && !isApollo(l)) return // every label passes here, including centre-fill ones
       let u = units.get(l.id)
       if (!u) { u = unitOf(l.lon, l.lat); units.set(l.id, u) }
       const r = Math.max(0.995, Math.min(1.006, f.surfaceRadius?.(l.lon, l.lat) ?? 1))

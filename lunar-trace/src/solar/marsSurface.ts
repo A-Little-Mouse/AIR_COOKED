@@ -4,7 +4,7 @@ import type { BodyDef } from './bodies.ts';
 import { loadBody } from './loadBody.ts';
 import { fbm, rng, sstep } from './noise.ts';
 
-// A made-up ground scene on Mars: a lander on dusty terrain under a tan sky (the landing sites are real; the ground is not).
+// A made-up Mars ground scene (the landing sites are real; the ground is not).
 export const MARS_SUN_ELEVATION_DEG = 25; // how high the Sun is in the sky
 const PAD_RADIUS = 3;
 const SIZE = 700; // width of the ground square in metres (fog hides its edge)
@@ -46,7 +46,6 @@ export class MarsSurfaceScene {
     this.setCameraPose(0);
   }
 
-  // Draws the tan sky gradient.
   private skyTexture(): THREE.Texture {
     const cv = document.createElement('canvas');
     cv.width = 4; cv.height = 256;
@@ -59,7 +58,6 @@ export class MarsSurfaceScene {
     return t;
   }
 
-  // Builds the hilly ground.
   private buildGround(): THREE.Mesh {
     const SEG = 220;
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
@@ -73,7 +71,6 @@ export class MarsSurfaceScene {
     return mesh;
   }
 
-  // Scatters rocks over the ground.
   private buildRocks(): THREE.InstancedMesh {
     const COUNT = 900, rand = rng(4);
     const geo = new THREE.IcosahedronGeometry(1, 2);
@@ -113,7 +110,6 @@ export class MarsSurfaceScene {
     this.yaw = e.y; this.pitch = e.x;
   }
 
-  // Turns the view as the mouse is dragged.
   look(dx: number, dy: number): void {
     this.enterManual();
     this.yaw -= dx * 0.004;
@@ -149,7 +145,6 @@ export class MarsSurfaceScene {
     this.camera.lookAt(0, this.lookY, 0);
   }
 
-  // Frees the graphics memory.
   dispose(): void {
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;

@@ -7,7 +7,7 @@ import { textureBytes } from '../../quality/ledger'
 import { trackGpu } from '../../quality/track'
 import { type Placement, attitudeQuat, fitPlacement, PLACEMENT_INVALID_Z } from '../lmPlacement'
 
-// Draws the lunar rovers on the ground: the real Apollo 17 rover at Station 1, plus an extra one near the lunar module (the heading of both is a guess).
+// Draws the rovers: the Apollo 17 one at Station 1 and an extra one by the module.
 const ROVER_LENGTH_M = 3.1
 const enu = (e: number, n: number, u: number): THREE.Vector3 => new THREE.Vector3(e, u, -n)
 
@@ -30,6 +30,8 @@ export class ActorLayer {
   private shadowFocus = 0
 
   private sunDir = new THREE.Vector3(0, 1, 0)
+  /** Lunar Trace: the landing flight draws no rover (GroundMode.setRoverEnabled). */
+  hidden = false
 
   constructor() {
     this.sun.castShadow = true
@@ -55,7 +57,6 @@ export class ActorLayer {
     return new THREE.CanvasTexture(cv)
   }
 
-  // Makes one fake shadow patch for a rover.
   private makeShadow(): Shadow {
     const mat = new THREE.MeshBasicMaterial({ map: this.blob, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, toneMapped: false })
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat)
@@ -66,7 +67,6 @@ export class ActorLayer {
     return { mesh }
   }
 
-  // Makes a model loader that can open compressed files.
   private loaderFor(base: string): GLTFLoader {
     const loader = new GLTFLoader()
     loader.setDRACOLoader(new DRACOLoader().setDecoderPath(`${base}draco/`)) // the rover file is compressed
@@ -132,7 +132,6 @@ export class ActorLayer {
     this.placeRoverAt(0, e, n, headingDeg)
   }
 
-  // Adds another rover at a spot.
   addRoverSite(e: number, n: number, headingDeg: number): void {
     this.roverSites.push({ e, n, headingDeg })
     this.placeRoverAt(this.roverSites.length - 1, e, n, headingDeg)
@@ -204,9 +203,8 @@ export class ActorLayer {
     s.mesh.rotateZ(Math.atan2(-len.z, len.x))
   }
 
-  // Draws the rovers on top of the ground.
   render(renderer: THREE.WebGLRenderer, view: GroundView, aspect: number): void {
-    if (!this.rovers.some((r) => r.root.visible)) return
+    if (this.hidden || !this.rovers.some((r) => r.root.visible)) return
     const cam = this.camera
     cam.fov = 2 * Math.atan(view.tanHalf) * 180 / Math.PI
     cam.aspect = aspect
@@ -223,7 +221,6 @@ export class ActorLayer {
     renderer.render(this.scene, cam)
   }
 
-  // Frees the graphics memory.
   dispose(): void {
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh

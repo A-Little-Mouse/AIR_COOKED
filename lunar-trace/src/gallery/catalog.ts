@@ -4,10 +4,8 @@ export interface Craft {
   id: string;
   name: string;
   category: CraftCategory;
-  // Where the 3D model file is.
   model: string;
   info: string;
-  // Where its video is, if it has one.
   video?: string;
 }
 
@@ -24,11 +22,9 @@ const VIDEOS: Record<string, string> = {
   kepler: '/videos/kepler.mp4',
 };
 
-// Builds the data for one spacecraft.
 const c = (category: CraftCategory, id: string, name: string, info: string, model = `/models/craft/${category}/${id}.glb`): Craft =>
   ({ id, name, category, model, info, video: VIDEOS[id] });
 
-// Every spacecraft in the gallery.
 export const CRAFT: Craft[] = [
   c('landers-rovers', 'apollo-lunar-module', 'Apollo Lunar Module', 'The two-stage craft that carried Apollo astronauts from lunar orbit to the surface and back. Its descent stage was left on the Moon.', '/models/craft/landers-rovers/apollo-lunar-module.glb'),
   c('landers-rovers', 'lunar-roving-vehicle', 'Lunar Roving Vehicle', 'The battery-powered rover driven by astronauts on Apollo 15, 16 and 17. All three were left parked on the Moon.'),

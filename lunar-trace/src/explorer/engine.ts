@@ -17,7 +17,6 @@ export interface Callbacks {
   onSelect: (id: string) => void;
   onFreeFly: (on: boolean) => void;
   onReady: () => void;
-  // Called when a camera flight reaches its body.
   onArrive?: (id: string) => void;
 }
 
@@ -43,13 +42,10 @@ const SMOOTH = 0.8; // how much camera movement is smoothed out
 const SUN_LIGHT = 3.6; // Sun brightness (the same at every distance)
 // Smooth start-and-stop curve for camera flights (0 to 1 in, 0 to 1 out).
 const glide = (k: number) => k * k * k * (k * (k * 6 - 15) + 10);
-// Older, gentler easing curve (same idea as glide).
 const ease = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
-// Moves a smoothed value toward its target by a fraction f.
 const lerpTo = (target: number, prev: number, f: number) => target + (prev - target) * f;
 
-// The 3D engine for the Mars system: draws Mars, Phobos, Deimos, the Sun and the landers, and moves the camera. One unit in the scene is one kilometre.
-// Makes the glowing Sun picture: a white-hot centre, a soft halo and thin rays, like the Moon page's Sun.
+// Makes the glowing Sun picture, like the Moon page's Sun.
 function makeSunGlare(): THREE.Sprite {
   const N = 512, c = N / 2;
   const cv = document.createElement('canvas');
@@ -74,6 +70,7 @@ function makeSunGlare(): THREE.Sprite {
   return new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false }));
 }
 
+// The 3D engine for Mars: draws the bodies and moves the camera (1 unit = 1 km).
 export class SolarEngine {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -123,9 +120,8 @@ export class SolarEngine {
   private canvas: HTMLCanvasElement;
   private cleanups: Array<() => void> = [];
 
-  // Builds the renderer, lights and effects, and starts listening for mouse, touch and resize.
   constructor(private mount: HTMLElement, private labelLayer: HTMLElement, private cb: Callbacks, private world: WorldId = 'mars') {
-    // Log depth keeps near and far objects from flickering, since sizes range from metres to millions of km.
+    // Log depth stops near and far objects flickering across huge size ranges.
     this.renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -234,7 +230,6 @@ export class SolarEngine {
     return p;
   }
 
-  // Puts a loaded lander into the scene at its landing spot.
   private addCraft(def: BodyDef, wrapper: THREE.Group): void {
     const site = def.craft!;
     const parent = this.byId.get(def.parent!)!;
@@ -270,7 +265,6 @@ export class SolarEngine {
     anchor.getWorldPosition(body.world);
   }
 
-  // Stops the animation and frees the graphics memory.
   dispose(): void {
     this.disposed = true;
     cancelAnimationFrame(this.raf);
@@ -288,7 +282,6 @@ export class SolarEngine {
     this.canvas.remove();
   }
 
-  // Fits the 3D view to the size of its container.
   private resize(): void {
     const w = this.mount.clientWidth || 1, h = this.mount.clientHeight || 1;
     this.renderer.setSize(w, h);
@@ -307,7 +300,6 @@ export class SolarEngine {
     q.setFromRotationMatrix(this.mat);
   }
 
-  // Moves the camera to the shot just off Phobos and keeps it there.
   holdPhobosShot(instant = false): void {
     if (!this.ready || this.world !== 'mars') return;
     this.flight = null;
@@ -323,14 +315,12 @@ export class SolarEngine {
     if (instant) { this.shift = target; this.applyShift(); }
   }
 
-  // Eases the sideways shift toward its target each frame.
   private updateShift(dt: number): void {
     if (Math.abs(this.shift - this.shiftTarget) < 1e-4) { if (this.shift !== this.shiftTarget) { this.shift = this.shiftTarget; this.applyShift(); } return; }
     this.shift += (this.shiftTarget - this.shift) * Math.min(1, dt * 1.8);
     this.applyShift();
   }
 
-  // Applies the current shift to the camera.
   private applyShift(): void {
     const w = this.mount.clientWidth || 1, h = this.mount.clientHeight || 1;
     if (this.shift === 0) this.camera.clearViewOffset();
@@ -348,13 +338,10 @@ export class SolarEngine {
     this.camera.quaternion.slerpQuaternions(hd.q0, q, k);
   }
 
-  // Turns the labels on or off.
   setLayers(l: Layers): void { this.layers = l; }
   // Flies back to the whole-Mars view.
   home(): void { this.travelTo(this.bodies[0].def.id); }
-  // Switches free-fly camera mode on or off.
   toggleFreeFly(): void { this.setFreeFly(this.mode !== 'freefly'); }
-  // Returns the id of the body the camera is on.
   getSelectedId(): string { return this.target?.def.id ?? this.bodies[0]?.def.id ?? 'sun'; }
   // Returns the camera and body positions, for testing.
   debug() {
@@ -365,7 +352,6 @@ export class SolarEngine {
     };
   }
 
-  // Turns free-fly mode on or off.
   setFreeFly(on: boolean): void {
     if (!this.ready) return;
     if (on && this.mode !== 'freefly') {
@@ -408,7 +394,7 @@ export class SolarEngine {
       if (tang.lengthSq() < 1e-6) tang.crossVectors(up, new THREE.Vector3(0, 1, 0));
       dir.copy(up).multiplyScalar(0.8).addScaledVector(tang.normalize(), 0.6);
     } else {
-      if (!(this.world === 'mars' && id === 'mars')) dir.y += 0.25; // Mars: straight down the Sun line, so the face in view is fully lit
+      if (!(this.world === 'mars' && id === 'mars')) dir.y += 0.25; // Mars: look straight down the Sun line so its face is fully lit
     }
     dir.normalize();
     const offset = dir.clone().multiplyScalar(b.def.radiusKm * b.def.viewRadii);
@@ -431,13 +417,11 @@ export class SolarEngine {
     this.lon = Math.atan2(-o.z, o.x);
   }
 
-  // Stops any leftover camera movement.
   private resetSmoothing(): void {
     this.yawS = 0; this.pitchS = 0; this.zoomS = 1; this.rollS = 0;
   }
 
 
-  // Listens for mouse, touch, wheel and keyboard.
   private bindInput(): void {
     const on = <K extends keyof HTMLElementEventMap>(el: HTMLElement, type: K, fn: (e: HTMLElementEventMap[K]) => void, opt?: AddEventListenerOptions) => {
       el.addEventListener(type, fn, opt);
@@ -489,7 +473,6 @@ export class SolarEngine {
     onWin('blur', () => { this.keys.clear(); this.dragging = false; });
   }
 
-  // Finds which body is under the pointer.
   private pickAt(clientX: number, clientY: number): Body | null {
     const r = this.canvas.getBoundingClientRect();
     this.raycaster.setFromCamera(new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1), this.camera);
@@ -509,7 +492,7 @@ export class SolarEngine {
     const nowMs = performance.now();
     const dt = Math.min((nowMs - this.lastFrameMs) / 1000, 0.1);
     this.lastFrameMs = nowMs;
-    this.timeMs += dt * 1000; // real time
+    this.timeMs += dt * 1000;
     this.updateBodies();
     this.updateShift(dt);
     if (this.hold) this.updateHold(dt);
@@ -521,7 +504,6 @@ export class SolarEngine {
     this.composer.render();
   };
 
-  // Moves every body to where it is at the current time.
   private updateBodies(): void {
     for (const b of this.bodies) {
       const c = b.def.craft;
@@ -638,7 +620,7 @@ export class SolarEngine {
     }
   }
 
-  // Works out a curved camera path round a body, so the camera never cuts through it and zooms feel even.
+  // Works out a curved camera path round a body, never cutting through it.
   private arc(center: THREE.Vector3, p0: THREE.Vector3, p1: THREE.Vector3, k: number, out: THREE.Vector3): THREE.Vector3 {
     const a = this.arcA.copy(p0).sub(center), b = this.arcB.copy(p1).sub(center);
     const d0 = Math.max(a.length(), 1e-9), d1 = Math.max(b.length(), 1e-9);
@@ -653,7 +635,6 @@ export class SolarEngine {
   private arcA = new THREE.Vector3();
   private arcB = new THREE.Vector3();
 
-  // Each frame, moves the camera along its flight, then hands over to orbit mode.
   private updateFlight(dt: number): void {
     const fl = this.flight!;
     fl.t += dt;

@@ -7,17 +7,14 @@ export type WorldId = 'mars';
 const MARS_BODY_IDS = ['mars', 'phobos', 'deimos'];
 const MARS_CRAFT_IDS = ['viking-1', 'viking-2', 'sojourner', 'spirit', 'opportunity', 'insight', 'ingenuity'];
 
-// Reads which system to show (always Mars).
 export function worldFromSearch(_search: string): WorldId {
   return 'mars';
 }
 
-// Returns Mars, Phobos and Deimos.
 export function bodiesOf(_world: WorldId): BodyDef[] {
   return MARS_BODY_IDS.map((id) => BODY_BY_ID.get(id)!);
 }
 
-// Returns the landers and rovers on Mars.
 export function craftOf(_world: WorldId): BodyDef[] {
   return MARS_CRAFT_IDS.map((id) => CRAFT_BODIES.find((c) => c.id === id)!);
 }

@@ -1,3 +1,4 @@
+import { CSM_TIP_Y_M } from '../descent/flight'
 import * as THREE from 'three'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -64,6 +65,11 @@ export class LunarModule {
   private rebase = new THREE.Vector3()
   private flying = false
   private plume: THREE.Mesh | null = null
+  /** Lunar Trace: the Apollo command module, docked on this module's top at the start of the landing film (loadCsm, setCsmOffset). */
+  private csm: THREE.Group | null = null
+  /** The command module's main-engine glow (a modelled cone from its bell, forward along the stack) and its length, metres. */
+  private csmPlume: THREE.Group | null = null
+  private csmLength = 10
 
   /** Side of the depth target and of the Sun light's shadow map, in texels (the class's `lmShadowRes`; the Reduced chip prints this number). */
   readonly shadowRes: number
@@ -298,6 +304,7 @@ export class LunarModule {
     this.dust.setSun(s3)
     // A basic (unlit) material is not scaled by the pre-exposure the lit surfaces are, so its colour carries it: about a sunlit surface's radiance, times 0.12: a faint glow.
     if (this.plume) (this.plume.material as THREE.MeshBasicMaterial).color.setRGB(1.0, 0.72, 0.4).multiplyScalar(preExpose * 0.12)
+    if (this.csmPlume) for (const m of this.csmPlume.children as THREE.Mesh[]) (m.material as THREE.MeshBasicMaterial).color.setScalar(preExpose * 0.22)
     this.sun.castShadow = this.selfShadow && sunShare > 0.01
     this.scene.environmentIntensity = preExpose
     this.preExpose = preExpose
@@ -349,26 +356,102 @@ export class LunarModule {
 
   /** Exclude the actual module geometry from Moon eligibility without changing its shading. */
   renderMetadataOcclusion(renderer: THREE.WebGLRenderer, view: GroundView, aspect: number): void {
-    const dust = this.dust.mesh.visible, plume = this.plume?.visible
+    const dust = this.dust.mesh.visible, plume = this.plume?.visible, csmPlume = this.csmPlume?.visible
     const previous = this.scene.overrideMaterial
     this.dust.mesh.visible = false
     if (this.plume) this.plume.visible = false
+    if (this.csmPlume) this.csmPlume.visible = false
     this.scene.overrideMaterial = this.metadataOccluder
     try { this.render(renderer, view, aspect) }
     finally {
       this.scene.overrideMaterial = previous
       this.dust.mesh.visible = dust
       if (this.plume && plume !== undefined) this.plume.visible = plume
+      if (this.csmPlume && csmPlume !== undefined) this.csmPlume.visible = csmPlume
     }
+  }
+
+  /**
+   * Lunar Trace: loads the command and service module (a reduced Block 2 craft, public/actors/apollo-csm.glb) and docks it on this module's top, nose down, its
+   * docking probe's tip CSM_TIP_Y_M above the model origin on the Y axis. It is a child of `root`, so every pose of the module carries it. It starts hidden.
+   */
+  async loadCsm(url: string, dracoPath: string): Promise<void> {
+    if (this.csm) return
+    const draco = new DRACOLoader().setDecoderPath(dracoPath)
+    const loader = new GLTFLoader().setDRACOLoader(draco)
+    const gltf = await loader.loadAsync(url)
+    draco.dispose()
+    if (this.csm) return
+    const inner = gltf.scene
+    const box = new THREE.Box3().setFromObject(inner)
+    // the model is about 15.4 units across the service module; the real one is 3.9 m. Its origin goes to the probe tip, its axis along Y, then it is turned nose-down.
+    inner.position.set(-(box.min.x + box.max.x) / 2, -box.max.y, -(box.min.z + box.max.z) / 2)
+    const scaled = new THREE.Group()
+    scaled.add(inner)
+    scaled.scale.setScalar(3.9 / 15.4)
+    const dock = new THREE.Group()
+    dock.add(scaled)
+    dock.rotation.x = Math.PI
+    dock.position.y = CSM_TIP_Y_M
+    dock.visible = false
+    this.csmLength = (box.max.y - box.min.y) * (3.9 / 15.4)
+    // the main engine's glow: base at the bell (the stack's far end, +Y), apex further along +Y; two nested additive cones whose colour fades to black along their length (so the glow
+    // has no hard edge and no flat colour), unlit like the lander's
+    const mk = (radius: number): THREE.Mesh => {
+      const pg = new THREE.ConeGeometry(radius, 1, 24, 1, true)
+      pg.translate(0, 0.5, 0)
+      const pos = pg.attributes.position, col = new Float32Array(pos.count * 3)
+      for (let i = 0; i < pos.count; i++) { const f = 1 - pos.getY(i); col[i * 3] = f; col[i * 3 + 1] = f * 0.8; col[i * 3 + 2] = f * 0.55 }
+      pg.setAttribute('color', new THREE.BufferAttribute(col, 3))
+      return new THREE.Mesh(pg, new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 1, 1), vertexColors: true, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }))
+    }
+    const plume = new THREE.Group()
+    plume.add(mk(1.25), mk(0.65))
+    plume.position.y = this.csmLength
+    plume.visible = false
+    dock.add(plume)
+    this.csmPlume = plume
+    let bytes = 0
+    inner.traverse((o) => {
+      const m = o as THREE.Mesh
+      if (!m.isMesh) return
+      m.castShadow = false
+      m.receiveShadow = false
+      for (const a of Object.values(m.geometry.attributes)) bytes += (a as THREE.BufferAttribute).array.byteLength
+      if (m.geometry.index) bytes += m.geometry.index.array.byteLength
+    })
+    ledger.set('lm', `csm-est#${this.ledgerId}`, bytes)
+    this.csm = dock
+    this.root.add(dock)
+  }
+  /** The command module's main engine at strength `level` (0 off, 1 full): a flickering glow cone ahead of the stack, whose length follows the strength. */
+  setCsmPlume(level: number): void {
+    const pl = this.csmPlume
+    if (!pl) return
+    const on = level > 0.01 && !!this.csm?.visible
+    if (pl.visible !== on) pl.visible = on
+    if (!on) return
+    const flicker = 0.9 + 0.1 * Math.sin(performance.now() * 0.045) + 0.06 * Math.sin(performance.now() * 0.11)
+    pl.scale.set(0.5 + 0.7 * level, (3 + 14 * level) * flicker, 0.5 + 0.7 * level)
+  }
+  /** Shows the command module `d` metres along the docking axis from the docked position, or hides it (null). */
+  setCsmOffset(d: number | null): void {
+    const csm = this.csm
+    if (!csm) return
+    const on = d !== null
+    if (csm.visible !== on) csm.visible = on
+    if (on) csm.position.y = CSM_TIP_Y_M + d
   }
 
   dispose(): void {
     ledger.release('lm', `sun-shadow-map-est#${this.ledgerId}`)
+    ledger.release('lm', `csm-est#${this.ledgerId}`)
     this.metadataOccluder.dispose()
     this.dust.dispose()
     this.shadowTarget.dispose()
     this.envRT?.dispose()
     this.sun.shadow.dispose()
+    this.csm?.traverse((o) => { const m = o as THREE.Mesh; if (!m.isMesh) return; m.geometry.dispose(); for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.dispose() }) // (includes the engine glow)
     // The model's own GPU objects: geometry, materials and every texture they hold (the shared crinkle map is disposed once, repeats are harmless).
     this.model.traverse((o) => {
       const m = o as THREE.Mesh

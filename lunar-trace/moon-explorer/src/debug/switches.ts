@@ -52,7 +52,7 @@ const num = (group: SwitchGroup, name: string, effect: string, def: string | nul
 export const MOMENT_IDS: readonly string[] = [
   'first-light', 'earthrise-bg', 'earthrise', 'solar-eclipse', 'now', 'fly-around', 'far-side', 'surface', 'taurus-littrow-pass', 'apollo11', 'apollo17', 'apollo17-25cm', 'land-lm',
   'land-lm-eye', 'terminator-run', 'earthrise-low', 'plato-rim', 'tycho-rim', 'rille-run', 'pole-limb-sweep', 'bank-turn-a', 'bank-turn-b', 'sunrise-arc-a',
-  'sunrise-arc-b', 'limb-glide-a', 'limb-glide-b',
+  'sunrise-arc-b', 'limb-glide-a', 'limb-glide-b', 'land-like-apollo17',
 ]
 
 const T = 'Tiles & streaming', S = 'Shadows', F = 'Flight & prefetch', Q = 'Quality & class', M = 'Motion & pacing', L = 'Look & post', V = 'View & moments', D = 'Data layers', X = 'Measurement'

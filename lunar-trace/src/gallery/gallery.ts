@@ -32,7 +32,6 @@ const loader = createGLTFLoader();
 let current: THREE.Object3D | null = null;
 let token = 0;
 
-// Fits the 3D view to the window.
 function resize() {
   const { clientWidth: w, clientHeight: h } = stage;
   renderer.setSize(w, h);
@@ -42,7 +41,6 @@ function resize() {
 new ResizeObserver(resize).observe(stage);
 resize();
 
-// Frees the graphics memory of a model.
 function dispose(o: THREE.Object3D) {
   o.traverse((n) => {
     const m = n as THREE.Mesh;
@@ -132,7 +130,6 @@ for (const cat of Object.keys(CATEGORY_LABEL) as CraftCategory[]) {
 
 // Video player controls.
 const player = $('player'), video = $<HTMLVideoElement>('player-video');
-// Opens the video player and starts the video.
 function openVideo(craft: Craft) {
   if (!craft.video) return;
   $('player-title').textContent = craft.name;
@@ -141,7 +138,6 @@ function openVideo(craft: Craft) {
   video.play().catch(() => undefined); // if autoplay is blocked, the visitor can press play
   $<HTMLButtonElement>('player-close').focus();
 }
-// Stops and closes the video player.
 function closeVideo() {
   video.pause();
   video.removeAttribute('src');

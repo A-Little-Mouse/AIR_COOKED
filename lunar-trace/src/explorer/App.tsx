@@ -14,7 +14,6 @@ function parseHash(): { id: string; embed: boolean } {
   return { id, embed: q.get('embed') === 'true' };
 }
 
-// The Mars explorer page: the 3D view, the bottom bar, and the lander ground view.
 export default function App() {
   const mountRef = useRef<HTMLDivElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
@@ -77,15 +76,12 @@ export default function App() {
     return () => window.removeEventListener('message', onMsg);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Goes back to the home page.
   const goHome = useCallback(() => {
     if (window.parent !== window) window.parent.postMessage({ type: 'lt-back' }, window.location.origin);
     else window.location.href = '/?mars';
   }, []);
 
-  // Flies to a body.
   const travel = useCallback((id: string) => engineRef.current?.travelTo(id), []);
-  // Turns the labels on or off.
   const setLayers = (l: Layers) => { setLayersState(l); engineRef.current?.setLayers(l); };
 
   // Use the orange Mars colour.
@@ -102,7 +98,6 @@ export default function App() {
     setGroundLeaving(true);
     window.setTimeout(() => { setGroundId(null); setGroundLeaving(false); then?.(); }, 500);
   }, [groundId]);
-  // Closes the ground view.
   const closeGround = useCallback(() => leaveGround(), [leaveGround]);
   const groundDef = groundId ? BODY_BY_ID.get(groundId) ?? null : null;
   const canGround = world === 'mars' && selected.craft?.kind === 'surface';

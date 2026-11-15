@@ -27,6 +27,7 @@ export interface NavEntry {
   steps: NavStep[]
 }
 
+const moment = (id: string, label: string | null = null): NavStep => ({ label, action: { kind: 'moment', id } })
 const pin = (id: string, label: string | null = null): NavStep => ({ label, action: { kind: 'pin', id } })
 
 /** The visitor's list, in prev/next order: far to near, then the two landing sites, then the Earth as we see it (the evening behind an Alpine ridge is hidden, see HIDDEN_ENTRIES). */
@@ -41,6 +42,8 @@ export const VIEWPOINT_ENTRIES: readonly NavEntry[] = [
       { label: 'Station 6 panorama', action: { kind: 'panorama', id: 'station6' } },
     ],
   },
+  // Lunar Trace: the real Apollo 17 descent, from lunar orbit to touchdown.
+  { id: 'land-apollo17', name: 'Apollo 17 landing', caption: 'From lunar orbit to touchdown in the Taurus-Littrow valley, on the real 1972 descent track.', steps: [moment('land-like-apollo17')] },
   { id: 'pin-apollo11', name: 'Apollo 11', caption: 'Tranquility Base, 20 July 1969, on the 2011 orbiter photograph.', steps: [pin('pin-apollo11')] },
   { id: 'pin-apollo12', name: 'Apollo 12', caption: 'Ocean of Storms, 19 November 1969.', steps: [pin('pin-apollo12')] },
   { id: 'pin-apollo14', name: 'Apollo 14', caption: 'Fra Mauro, 5 February 1971.', steps: [pin('pin-apollo14')] },

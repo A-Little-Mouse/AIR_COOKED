@@ -8,6 +8,7 @@ const SHORT: Readonly<Record<string, string>> = {
   'pin-apollo15': 'Hadley–Apennine, 1971',
   'pin-apollo16': 'Descartes Highlands, 1972',
   'pin-apollo17': 'Taurus-Littrow: walk it',
+  'land-apollo17': 'Orbit to touchdown, 30 s',
   
 }
 export const SHORT_MAX = 40
