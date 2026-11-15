@@ -14,7 +14,7 @@ function renderShell() {
       <main id="top">
         <section class="hero" aria-labelledby="hero-title">
           <div class="hero-copy">
-            <h1 id="hero-title">What we <em>leave</em> behind.</h1>
+            <h1 id="hero-title">What we <em>left</em> behind.</h1>
             <p class="hero-lede">Discover the inactive equipment and technologies from Mars and Moon alike, long after its final transmission</p>
             <div class="hero-actions">
               <a class="primary-button expedition-button" data-explore-moon href="${MOON_URL}">Explore Moon <span class="arrow">↗</span></a>
@@ -29,7 +29,7 @@ function renderShell() {
       <main>
         <section class="hero" aria-labelledby="mars-title">
           <div class="hero-copy">
-            <h1 id="mars-title">What we <em>leave</em> behind.</h1>
+            <h1 id="mars-title">What we <em>left</em> behind.</h1>
             <p class="hero-lede">Discover the inactive equipment and technologies from Mars and Moon alike, long after its final transmission</p>
             <div class="hero-actions">
               <a class="primary-button" id="explore-mars" href="/explorer.html?world=mars#/mars">Explore Mars <span class="arrow">↗</span></a>
