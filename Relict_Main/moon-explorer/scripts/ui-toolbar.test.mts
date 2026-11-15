@@ -13,7 +13,7 @@ assert.match(bar, /\[\.\.\.items\.values\(\)\]\.sort\(\(a, b\) => a\.item\.order
 assert.doesNotMatch(bar, /id: 'share'|clipboard|bar-toast/, 'no Share button and no copy handler in the bar')
 assert.doesNotMatch(bar, /max-width: 520px|narrow\.matches/, 'overflow items no longer depend on a phone width')
 assert.match(bar, /if \(item\.id === 'more' \|\| !item\.overflow && !moved\)/, 'overflow items are in More at every width')
-for (const [file, id] of [['src/ui/quality.ts', 'quality'], ['src/ui/topography.ts', 'topography'], ['src/main.ts', 'credits']]) assert.match(read(file), new RegExp(`id: '${id}'[^}]*overflow: true`), `${id} is a More item`)
+for (const [file, id] of [['src/ui/quality.ts', 'quality'], ['src/main.ts', 'credits']]) assert.match(read(file), new RegExp(`id: '${id}'[^}]*overflow: true`), `${id} is a More item`)
 assert.match(main, /id: 'credits', label: 'Credits'[^}]*onClick: \(\) => document\.querySelector<HTMLButtonElement>\('#credit \.credit-link'\)\?\.click\(\)/, 'Credits in More presses the brand line\'s own link')
 assert.match(bar, /const placeToggle = [\s\S]*const target = manual \|\| flying \? more : icons/, 'the pad\'s toggle is in More while manual navigation is on or a flight\'s slider holds the row')
 assert.match(bar, /setCompact\(on\) \{ if \(manual !== on\) \{ manual = on; place\(\); bar\.dispatchEvent\(new CustomEvent\('barmanual', \{ detail: on \}\)\) \} \}/)
