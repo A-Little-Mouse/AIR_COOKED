@@ -1,0 +1,44 @@
+<!doctype html><meta charset="utf-8"><title>thumbs</title>
+<canvas id="c" width="480" height="320"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('/draco/'));
+const load = (u) => loader.loadAsync(u).then((g) => g.scene);
+const [lm, lrv] = await Promise.all([load('/models/apollo-lunar-module.glb'), load('/models/craft/landers-rovers/lunar-roving-vehicle.glb')]);
+const earthTex = await new THREE.TextureLoader().loadAsync('/moon/earth/albedo-11.jpg').catch(() => null);
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(480, 320, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const fit = (obj, size) => { const b = new THREE.Box3().setFromObject(obj); const s = size / Math.max(...b.getSize(new THREE.Vector3()).toArray()); obj.scale.multiplyScalar(s); const b2 = new THREE.Box3().setFromObject(obj); obj.position.y -= b2.min.y; obj.position.x -= (b2.min.x + b2.max.x) / 2; obj.position.z -= (b2.min.z + b2.max.z) / 2; return obj; };
+function scene(kind, seed) {
+  const sc = new THREE.Scene();
+  sc.background = new THREE.Color(0x0a0b0f);
+  const sun = new THREE.DirectionalLight(0xfff1de, 3.2); sun.position.set(-4 + seed, 2.4 + (seed % 3) * 0.4, 3); sc.add(sun);
+  sc.add(new THREE.AmbientLight(0x8a93a8, 0.35));
+  const camera = new THREE.PerspectiveCamera(32, 480 / 320, 0.1, 200);
+  const tint = [0x77736c, 0x6f6e6a, 0x7a7770, 0x72706b, 0x78746d, 0x6d6c6a][seed % 6];
+  if (kind === 'earthrise') {
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(40, 96, 48), new THREE.MeshStandardMaterial({ color: 0x777470, roughness: 1 }));
+    moon.position.set(0, -40.5, 0); sc.add(moon);
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(3.2, 64, 32), new THREE.MeshStandardMaterial({ map: earthTex, roughness: 1 }));
+    earth.position.set(2, 5, -30); earth.rotation.y = 2.2; sc.add(earth);
+    sun.position.set(6, 4, 6);
+    camera.position.set(0, 1.2, 14); camera.lookAt(0, 2.6, 0);
+    return { sc, camera };
+  }
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 64), new THREE.MeshStandardMaterial({ color: tint, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; sc.add(ground);
+  const rocks = new THREE.Group();
+  let r = seed * 9301 + 49297; const rnd = () => ((r = (r * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.08 + rnd() * 0.22, 1), new THREE.MeshStandardMaterial({ color: 0x66635e, roughness: 1 })); m.position.set((rnd() - 0.5) * 14, 0.05, (rnd() - 0.5) * 9 + 1); m.scale.y = 0.6; rocks.add(m); }
+  sc.add(rocks);
+  const L = fit(lm.clone(true), 4.2); L.position.x += kind === 'lm' ? 0 : -2.1; L.rotation.y = 0.5 + seed * 0.35; sc.add(L);
+  if (kind === 'lm+lrv') { const R = fit(lrv.clone(true), 3.4); R.position.set(2.2, 0, 1.6); R.rotation.y = -0.6 - seed * 0.2; sc.add(R); }
+  camera.position.set(kind === 'lm' ? 5.5 : 8, 2.2, 9.5); camera.lookAt(kind === 'lm' ? 0 : 0.2, 1.6, 0);
+  return { sc, camera };
+}
+window.renderThumb = (kind, seed) => { const { sc, camera } = scene(kind, seed); renderer.render(sc, camera); return document.getElementById('c').toDataURL('image/png'); };
+window.ready = true;
+</script>

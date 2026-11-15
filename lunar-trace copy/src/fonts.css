@@ -1,0 +1,4 @@
+/* Self-hosted fonts (no request to Google): Space Grotesk (one variable file, 400 to 700) and DM Mono (400, 500). Latin only. */
+@font-face { font-family: 'Space Grotesk'; src: url('/fonts/space-grotesk-latin.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('/fonts/dm-mono-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('/fonts/dm-mono-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }

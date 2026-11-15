@@ -1,0 +1,103 @@
+/* Lunar Trace's look for the Moon: the same fonts, colours and glass as the title slide, explorer and gallery.
+   Loaded last, so it wins. The accent below replaces the upstream pale blue everywhere (they read var(--lt-accent)). */
+@font-face { font-family: 'Space Grotesk'; src: url('/fonts/space-grotesk-latin.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('/fonts/dm-mono-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('/fonts/dm-mono-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+
+:root {
+  --lt-accent: #d9ff4f;
+  --lt-accent-rgb: 217, 255, 79;
+  --lt-bg: #08090d;
+  --lt-panel: rgba(11, 12, 17, 0.84);
+  --lt-line: rgba(255, 255, 255, 0.14);
+  --lt-muted: #9697a5;
+  --lt-sans: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --lt-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+html, body, button, input, select, textarea { font-family: var(--lt-sans); }
+
+/* glass: the same near-black panel, hairline border and lime top edge as the other pages */
+.bar, .bar-padrow, .bar-sheet, .ground-panel { background: var(--lt-panel); border-color: var(--lt-line); }
+.ground-panel, .bar-sheet { position: relative; }
+.ground-panel { position: absolute; }
+.ground-panel::before, .bar-sheet::before {
+  content: ''; position: absolute; top: -1px; left: 22px; width: 56px; height: 1px; background: var(--lt-accent); box-shadow: 0 0 14px rgba(var(--lt-accent-rgb), 0.55); pointer-events: none;
+}
+
+/* small mono caps for the labels, as on the other pages */
+.gp-glyph, .brand-line, .hud-i { font-family: var(--lt-mono); }
+.ground-panel button { font-size: 0.8125rem; letter-spacing: 0.01em; }
+.ground-panel button[aria-pressed='true'] { box-shadow: 0 0 18px rgba(var(--lt-accent-rgb), 0.28); }
+
+/* the way back to the title slide, in the style of the other pages' "← Lunar Trace" link */
+.lt-back {
+  position: fixed; z-index: 80; top: max(16px, env(safe-area-inset-top, 0px)); left: max(18px, env(safe-area-inset-left, 0px));
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+  font: 500 0.64rem/1 var(--lt-mono); letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; text-shadow: none;
+  color: #f4f2ed; background: var(--lt-panel); border: 1px solid var(--lt-line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.lt-back:hover { color: var(--lt-accent); border-color: rgba(var(--lt-accent-rgb), 0.55); box-shadow: 0 0 18px rgba(var(--lt-accent-rgb), 0.2); }
+.lt-back:focus-visible { outline: 2px solid var(--lt-accent); outline-offset: 2px; }
+
+/* Lunar Trace: the date/time control and the "More" menu are not part of the experience (the Moon is lit for now; credits are the link at the bottom left). */
+.bar [data-bar='time'], .bar [data-bar='more'], #bar-time, #bar-more { display: none !important; }
+
+/* The bar's buttons speak the main menu's language: pill shapes, a hairline border, a lime border and lime ink on hover, a filled lime pill (dark ink) when on,
+   small mono text for any label. (The title slide's .ghost-button / .primary-button.) */
+.bar, .bar-padrow { border-color: rgba(255, 255, 255, 0.24); }
+.bar button, .bar .tc-half, .bar-padrow .tc-half, .bar-padrow button {
+  border: 1px solid transparent; border-radius: 999px; transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.bar button:hover:not(:disabled), .bar .tc-half:hover, .bar-padrow .tc-half:hover, .bar-padrow button:hover:not(:disabled) {
+  background: transparent; color: var(--lt-accent); border-color: var(--lt-accent);
+}
+.bar button[aria-pressed='true'], .bar button[aria-expanded='true'], .bar .nav-list.open, .bar .tc-half[data-down], .bar-padrow .tc-half[data-down], .bar .tc-toggle[aria-pressed='true'] {
+  background: var(--lt-accent) !important; color: #0b0d0b !important; border-color: var(--lt-accent) !important; box-shadow: 0 0 18px rgba(var(--lt-accent-rgb), 0.28);
+}
+.bar button:active:not(:disabled) { transform: translateY(1px); }
+.bar .nav-count, .bar button .lbl, .bar-when, .nav-count { font-family: var(--lt-mono); letter-spacing: 0.06em; }
+
+/* Lunar Trace: no timeline/progress slider while a flight plays. */
+.journey-scrub, .nav-pill .journey-scrub { display: none !important; }
+
+/* Lunar Trace: no on-screen look/zoom/stick pad (up/down, + -, the dial) in the bar: the mouse, wheel and W A S D do it. */
+.bar .touch-ctl-pad, .bar .tc-toggle, .bar-padrow, .touch-ctl { display: none !important; }
+
+/* The bar as separate pills, like the main menu's buttons: no shared container, each control its own glass pill with a hairline border and a gap between them;
+   a mono caps label on the wide ones, an icon alone on the arrows. Hover = lime border and ink, on = filled lime (the rules above). */
+.bar { background: transparent !important; border-color: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; box-shadow: none; overflow: visible; gap: 10px; padding: 0; justify-content: center; min-height: 0; }
+.bar button {
+  flex: 0 0 auto; max-width: none; width: auto; min-width: 44px; height: 44px; padding: 0; gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24); background: var(--lt-panel); color: #e9e9ee; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.bar button .lbl, .bar .nav-list::after {
+  display: inline; font: 500 0.64rem/1 var(--lt-mono); letter-spacing: 0.14em; text-transform: uppercase; color: inherit;
+}
+.bar .nav-list, .bar [data-bar='home'], .bar [data-bar='labels'] { padding: 0 18px 0 14px; }
+.bar .nav-list::after { content: 'Places'; }
+.bar [data-bar='home'] { margin-left: 14px; }
+.bar button:hover:not(:disabled) .lbl, .bar .nav-list:hover::after { color: inherit; }
+.bar button:disabled { background: var(--lt-panel); }
+
+/* Behind the title slide (?bg=1): the Moon alone, no controls, no input. */
+.lt-bg #ui, .lt-bg .lt-back, .lt-bg #credit, .lt-bg .dock { display: none !important; }
+.lt-bg canvas#c { pointer-events: none; }
+
+/* Even spacing in the bar: one gap everywhere. (The journey slot is empty now, the pad slot is hidden.) */
+.bar .nav-slider, .bar .bar-navslot, .bar .nav-pill, .bar .bar-padslot { display: contents; }
+.bar [data-bar='home'], .bar [data-bar='full-view'] { margin-left: 0; }
+
+/* Lunar Trace: no feature-name readout (the bracketed "target lock" naming the crater or sea at the centre while you zoom) and no centre caption. */
+.lock-label, .dock > .centre-caption { display: none !important; }
+
+/* Lunar Trace: no feature search box (the search field of the Labels layer) and no "← Lunar Trace" link in the Moon. */
+.moon-labels .ml-search, .ml-search, #lt-back { display: none !important; }
+
+.bar [data-bar='full-view'] { padding: 0 18px 0 14px; }
+
+/* The original-repository credit beside "Credits" (bottom left, as on the Mars page). */
+#credit .credit-origin { pointer-events: auto; text-decoration: underline; text-underline-offset: 2px; }
+/* ...and it stays on screen, like the Mars page's line, instead of fading with the brand. */
+#credit[data-brand='out'] .brand-text, #credit[data-brand='out'] .credit-link { opacity: 0.55 !important; }
+#credit[data-brand='out'] .credit-link { pointer-events: auto; }
