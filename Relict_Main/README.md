@@ -1,6 +1,6 @@
 # Relict
 
-*What we leave behind.* An interactive look at the hardware people have left on the Moon and Mars, built with TypeScript, Vite and three.js.
+*What we left behind.* An interactive look at the hardware people have left on the Moon and Mars, built with TypeScript, Vite and three.js.
 
 | Page | What it is |
 |---|---|
