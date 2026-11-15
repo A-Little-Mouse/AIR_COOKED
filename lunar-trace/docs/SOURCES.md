@@ -15,26 +15,10 @@
 The interface credits NASA’s 3D Resources hub and keeps the model links available in the viewer footer. The models are included as downloaded NASA GLB assets in `public/models/`.
 
 
-## Added diorama assets
+## What the site uses now
 
-- Reference astronaut style: Sketchfab “Stylized Astronaut – Game-Ready” by cloudyette, Free Standard license: https://sketchfab.com/3d-models/stylized-astronaut-game-ready-27056600c2ac49f2827c4c5fc0a82940
-- Local generated assets: `public/models/stylized-astronaut.glb` and `public/models/stylized-mars.glb`, generated for this project in a low-poly planetary-diorama style.
-- Moon world: a procedural cratered 3D sphere in `src/expedition.ts`; the paid Moon GLB generation was not submitted because the session had insufficient 3D credits.
-
-
-## Planet texture update
-
-The Moon sphere now uses the local `public/textures/moon-lroc-color-2k.jpg` asset from NASA Scientific Visualization Studio’s CGI Moon Kit. NASA describes this 2048×1024 equirectangular color map as intended for wrapping onto 3D rendering spheres and sourced from Lunar Reconnaissance Orbiter camera data: https://svs.gsfc.nasa.gov/4720/. Mars continues to use the embedded texture materials from `public/models/stylized-mars.glb`.
-
-
-## Solar-system background (added)
-
-- The title slide's background is an interactive-free, real-time solar system: true sizes and distances (1 scene unit = 1 km), Earth, Moon and Mars from the project owner's own 3D models in `public/models/` (`earth.glb`, `moon.glb`, `mars.glb`).
-- `moon.glb` is built from NASA LRO imagery (NASA SVS / Scientific Visualization Studio, CGI Moon Kit family), resampled to a 4k texture on a light sphere mesh.
-- Planet positions: JPL "Keplerian Elements for Approximate Positions of the Major Planets" (valid 1800–2050); Moon: mean lunar elements. Planet pole directions: IAU/WGCCRE values.
-- The shot is chosen so Earth and Moon are well lit: the start date is moved forward (up to 20 days) to a time when the Moon is within 60° of the Sun as seen from Earth.
-
-## Surface expedition page (added)
-
-- `expedition.html` + `src/expedition/` is the playable "Walk the archive" page from the original Relict project (`src/expedition.ts`, copied unchanged; its styles are the original expedition section of `style.css`). "View Moon" on the title slide opens it.
-- Assets used by it: `public/models/` (`apollo-lunar-module`, `viking-lander`, `perseverance-rover` from NASA 3D Resources; `stylized-astronaut`, `stylized-mars` generated for the project) and `public/textures/moon-lroc-color-2k.jpg` (NASA SVS CGI Moon Kit).
+- **Mars system** (`/explorer.html?world=mars`, `src/explorer/`, `src/solar/`): Mars, Phobos, Deimos and the Sun (`public/models/mars.glb`, `phobos.glb`, `deimos.glb`, `sun.glb`) and the lander and rover models (`public/models/craft/`, `public/models/viking-lander.glb`, `apollo-lunar-module.glb`), from NASA 3D Resources.
+- **Positions:** JPL "Keplerian Elements for Approximate Positions of the Major Planets" (valid 1800-2050) for Mars; the Phobos and Deimos orbits and the IAU pole directions are in `src/solar/bodies.ts`. The landing coordinates are those of the NASA mission pages above.
+- **Mars ground scenes** (`src/solar/marsSurface.ts`) are illustrative: procedural terrain and rocks, with the landing sites real.
+- **The Moon** is the realistic Moon in `moon-explorer/` (see its `DATA-LICENSES.md`).
+- **Spacecraft gallery** (`/gallery.html`): the models in `public/models/craft/` and the videos in `public/videos/`.

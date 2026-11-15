@@ -1,6 +1,6 @@
 export type BodyType = 'star' | 'planet' | 'moon' | 'lander' | 'satellite';
 
-/** Where a spacecraft model sits: landers ride on their parent's surface. */
+// Where a lander sits on its planet (latitude and longitude).
 export type CraftSite = { kind: 'surface'; latDeg: number; lonDeg: number };
 
 export interface BodyDef {
@@ -8,26 +8,26 @@ export interface BodyDef {
   name: string;
   type: BodyType;
   model: string;
-  /** Equatorial radius, km. Scene units are kilometres, so this is also the rendered radius. */
+  // Size of the body, in km.
   radiusKm: number;
-  /** Body this one orbits; null = orbits the Sun (or is the Sun). */
+  // The body it orbits (null for the Sun and Mars).
   parent: string | null;
-  /** IAU north pole, J2000 equatorial coordinates, degrees. */
+  // Which way its north pole points.
   pole: { ra: number; dec: number };
-  /** Sidereal rotation period in hours; negative = retrograde. */
+  // Hours for one spin.
   rotationHours: number;
-  /** Camera distance from the body's centre, in radii, when you travel to it. */
+  // How far the camera stops from it, in body radii.
   viewRadii: number;
-  /** Moons only: labels/orbit lines show when the camera is within this many km of the parent. */
+  // Moons only: labels show when the camera is this close to the planet (km).
   labelRangeKm?: number;
   info: string;
-  /** Spacecraft only (type 'lander' | 'satellite'): placement. */
+  // Landers only: where it stands.
   craft?: CraftSite;
-  /** Extra rows for the info card (spacecraft). */
+  // Extra facts to show (landers).
   facts?: Array<[string, string]>;
 }
 
-/** The bodies of the Mars explorer: the Sun (light only), Mars and its two moons. Order = list order. */
+// The Sun, Mars and its two moons.
 export const BODIES: BodyDef[] = [
   {
     id: 'sun', name: 'Sun', type: 'star', model: '/models/sun.glb', radiusKm: 695_700, parent: null,
@@ -53,6 +53,6 @@ export const BODIES: BodyDef[] = [
 
 import { CRAFT_BODIES } from './craft.ts';
 
-/** Planets/moons first, each followed by the spacecraft that sit on or around it. Order = list order. */
+// Every body, each planet followed by its landers.
 export const ALL_BODIES: BodyDef[] = BODIES.flatMap((b) => [b, ...CRAFT_BODIES.filter((c) => c.parent === b.id)]);
 export const BODY_BY_ID = new Map(ALL_BODIES.map((b) => [b.id, b]));

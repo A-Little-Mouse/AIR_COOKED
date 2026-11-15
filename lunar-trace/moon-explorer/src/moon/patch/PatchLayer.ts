@@ -342,7 +342,7 @@ export class PatchLayer {
   /** Loads just the coarsest fallback. Camera demand requests subsequent levels in order. */
   static async create(base: string, opts: PatchOptions = {}): Promise<PatchLayer> {
     const net = opts.net ?? {}
-    const res = await fetchRetry(`${base}manifest.json`, { ...net, delaysMs: [] })
+    const res = await fetchRetry(`${base}manifest.json`, net) // Relict: the loader's usual retries (a single dropped request no longer fails the whole site)
     const manifest = await res.json() as PatchManifest
     validateManifest(manifest, MAX_PATCH_LEVELS)
     const layer = new PatchLayer(manifest)

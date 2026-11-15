@@ -2,10 +2,10 @@ import './style.css';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
-/** "Explore Moon" opens the realistic Moon (./moon-explorer), mounted at /moon/ on this same site, on its full-Moon view. */
+// Where the realistic Moon lives on this site.
 const MOON_URL = '/moon/';
 
-/** The title slide: the headline and the buttons, over the realistic Moon (an iframe, see startMoonBackground). */
+// Draws the home page: the headline and buttons over the Moon, plus the Mars slide.
 function renderShell() {
   app.innerHTML = `
     <iframe id="moon-bg" class="moon-bg" title="The Moon" tabindex="-1" aria-hidden="true"></iframe>
@@ -45,15 +45,9 @@ function renderShell() {
   `;
 }
 
-/**
- * The background is the realistic Moon itself (./moon-explorer, in an iframe, driven by messages), held on Earthrise. "Explore Moon" does not load another page: it
- * hands the same running Moon to the visitor (the headline fades, the controls come in, and the camera pulls back to show the whole Moon). "← Relict"
- * inside the Moon sends it back here. If the Moon has not reported in after FALLBACK_MS (no WebGL, no network), the page stays on its gradient.
- */
-/**
- * Weak or constrained devices and browsers (no WebGL2, Data Saver, a slow connection, 2 GB of memory or less, 2 cores or fewer) get the page without the live Moon and Mars
- * frames: the still Earthrise picture stays behind the text, and "Explore Moon" / "View Mars" open their pages directly, which load only when asked for.
- */
+
+
+// Returns true for weak devices (no WebGL2, data saver, slow network, little memory) that should skip the live Moon and Mars.
 function lowEndDevice(): boolean {
   try {
     const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean; effectiveType?: string } };
@@ -65,21 +59,23 @@ function lowEndDevice(): boolean {
 }
 const LOW_END = lowEndDevice() || new URLSearchParams(location.search).has('lite');
 const FALLBACK_MS = 60_000, SETTLE_MS = 300, RETURN_HEADLINE_MS = 1_100;
+// Starts the live Moon behind the home page, and handles Explore Moon and going back.
 function startMoonBackground(): Promise<void> {
   const frame = document.getElementById('moon-bg') as HTMLIFrameElement;
-  if (LOW_END) { frame.remove(); return Promise.resolve(); } // the still picture and the scrim stay
-  frame.src = '/moon/?bg=1&moment=earthrise-bg'; // set here, not in the markup, so a weak device never starts the request
+  if (LOW_END) { frame.remove(); return Promise.resolve(); } // weak devices keep the still picture
+  frame.src = '/moon/?bg=1&moment=earthrise-bg'; // set here so weak devices never download it
   let settle!: () => void;
   const settled = new Promise<void>((res) => { settle = res; });
   const send = (m: object) => frame.contentWindow?.postMessage(m, location.origin);
   let ready = false;
+  // Hands the Moon to the visitor: headline fades, controls appear.
   const goLive = () => {
     document.body.classList.add('moon-live');
     frame.classList.add('ready');
     send({ type: 'lt-bg', on: false });
-    send({ type: 'lt-home' }); // the camera pulls back from Earthrise to the whole Moon while the headline fades out
+    send({ type: 'lt-home' }); // pull the camera back to show the whole Moon
   };
-  // Back is the same motion in reverse: the controls go, the camera flies back in to Earthrise, and the headline returns as it arrives.
+  // Goes back to the home page: controls hide and the headline returns.
   const goHome = () => {
     send({ type: 'lt-bg', on: true });
     send({ type: 'lt-moment', id: 'earthrise-bg' });
@@ -89,7 +85,7 @@ function startMoonBackground(): Promise<void> {
     if (e.origin !== location.origin || e.source !== frame.contentWindow) return;
     const t = (e.data as { type?: string } | null)?.type;
     if (t === 'lt-ready' && !ready) {
-      // The Moon's first frame is its home view and it dissolves to Earthrise over a second or two: show it only once that has settled, so there is no flash of the full Moon.
+      // Wait for the Moon to settle on Earthrise so there is no flash of the full Moon.
       ready = true;
       window.setTimeout(() => {
         frame.classList.add('ready'); document.body.classList.add('moon-bg-on'); settle();
@@ -102,26 +98,27 @@ function startMoonBackground(): Promise<void> {
   return settled;
 }
 
-/**
- * Mars is held the same way. Once the Moon has settled, the whole Mars system (the explorer, in an iframe, driven by messages) loads behind it and is held on a shot off
- * Phobos, with Mars large beside the text. "View Mars" and "View Moon" only cross-fade between the two slides; "Explore Mars" fades the text and hands the live system to the
- * visitor (its camera flies to the Sun side of Mars, where the face is fully lit); its Home button fades back to this slide and the camera flies back to the shot.
- */
+
 const MARS_MODELS = ['mars', 'phobos', 'deimos', 'craft/landers-rovers/viking-lander', 'craft/landers-rovers/sojourner-rover', 'craft/landers-rovers/spirit-opportunity-rover', 'craft/landers-rovers/insight-lander', 'craft/landers-rovers/ingenuity-helicopter'];
 const MARS_FRAME_URL = '/explorer.html?world=mars&bg=1#/mars';
+// Starts the Mars system behind the home page, and handles View Mars, View Moon and Explore Mars.
 function startMars(afterMs: number) {
   const body = document.body;
   let frame: HTMLIFrameElement | null = null, frameReady = false, onMars = false, busy = false;
   const marsPage = document.querySelector('.mars-page') as HTMLElement;
+  // Loads the Mars page frame and warms up the model files.
   const load = () => {
     if (frame) return;
     frame = document.createElement('iframe');
     frame.className = 'mars-frame'; frame.title = 'Mars'; frame.tabIndex = -1; frame.src = MARS_FRAME_URL;
     document.body.appendChild(frame);
-    for (const m of MARS_MODELS) void fetch(`/models/${m}.glb`).catch(() => undefined); // warm the cache
+    for (const m of MARS_MODELS) void fetch(`/models/${m}.glb`).catch(() => undefined); // download early so they're cached
   };
+  // Sends a message to the Mars frame.
   const send = (m: object) => frame?.contentWindow?.postMessage(m, location.origin);
+  // Shows the Mars frame once it is ready and the Mars slide is open.
   const syncFrame = () => frame?.classList.toggle('ready', frameReady && onMars);
+  // Switches between the Moon slide and the Mars slide.
   const showMars = (on: boolean) => {
     onMars = on;
     body.classList.toggle('on-mars', on);
@@ -135,7 +132,7 @@ function startMars(afterMs: number) {
     if (e.origin !== location.origin || e.source !== frame?.contentWindow) return;
     const t = (e.data as { type?: string } | null)?.type;
     if (t === 'lt-ready') { frameReady = true; syncFrame(); }
-    else if (t === 'lt-back') { // Home in the Mars system: back to this slide, the camera flying back to the shot
+    else if (t === 'lt-back') { // Home was pressed in Mars: return to this slide
       body.classList.remove('mars-live');
       frame?.classList.remove('on');
       send({ type: 'lt-bg', on: true });
@@ -145,16 +142,16 @@ function startMars(afterMs: number) {
   document.getElementById('view-mars')!.addEventListener('click', (e) => { e.preventDefault(); showMars(true); });
   document.getElementById('view-moon')!.addEventListener('click', (e) => { e.preventDefault(); showMars(false); });
   document.getElementById('explore-mars')!.addEventListener('click', (e) => {
-    if (!frameReady || busy) return; // not loaded yet: the link just opens the explorer page
+    if (!frameReady || busy) return; // not ready yet: the link opens the explorer page instead
     e.preventDefault();
     busy = true;
-    body.classList.add('mars-live'); // the text fades...
-    frame!.classList.add('on'); // ...the controls come in...
-    send({ type: 'lt-bg', on: false }); // ...and the camera flies round to the Sun side of Mars
+    body.classList.add('mars-live'); // fade out the text
+    frame!.classList.add('on'); // bring in the controls
+    send({ type: 'lt-bg', on: false }); // fly the camera to the sunlit side of Mars
   });
   if (new URLSearchParams(location.search).has('mars')) showMars(true);
 }
 
 renderShell();
-// Mars (its frame and models, tens of MB) loads only after the Moon has settled, so the two never compete; on a weak device only when "View Mars" is pressed.
+// Mars is big, so it loads after the Moon (or only on View Mars for weak devices).
 void startMoonBackground().then(() => startMars(LOW_END ? Number.POSITIVE_INFINITY : 3000));

@@ -5,7 +5,7 @@
 // the preview publish refuses it, and this plugin refuses any base but /3d-moon/ and the native build, so the preview bucket page
 // and the store shell can never be built indexable.
 import type { Plugin } from 'vite'
-import { SITE_URL } from '../src/branding'
+import { SITE_URL } from '../src/branding.ts'
 
 /** The public address (src/branding.ts) is what the canonical link, og:url and the sitemap name. */
 export const SITE_BASE = '/3d-moon/'

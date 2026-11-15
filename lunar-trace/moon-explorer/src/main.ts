@@ -986,6 +986,7 @@ function ensurePatch(siteId: string): Promise<void> {
       hud.appendCredit(`${site.name} site: LROC narrow angle camera photograph and terrain model, ${site.credit} (public domain PDS products).`)
       if (patch.manifest.tier) hud.appendCredit('Apollo 17 lander area at 25 cm: I. Haase, M. Wählisch, P. Gläser, J. Oberst and M. S. Robinson (TU Berlin, DLR), from LROC narrow angle camera images, NASA/GSFC/Arizona State University, USGS PDS Annex.')
       if (siteId === 'a17') hud.appendCredit('Lunar module: NASA 3D Resources (Apollo Lunar Module model).')
+      if (siteId === 'a17') hud.appendCredit('A second Lunar Roving Vehicle stands near the module as an addition: Apollo 17 carried one rover, left at Station 1.')
       patchState = 'ready'
       autoRetries.delete(siteId)
       notifyProgress(true)

@@ -4,16 +4,13 @@ import type { BodyDef } from './bodies.ts';
 import { loadBody } from './loadBody.ts';
 import { fbm, rng, sstep } from './noise.ts';
 
-/**
- * An illustrative ground scene on Mars, in metres, in the spirit of the Moon's Tranquility Base scene (surface.ts): a lander on a flat pad,
- * rust-brown dust and rocks, a butterscotch sky. The landing coordinates are real; the terrain, rocks and the lander's heading are not.
- */
-export const MARS_SUN_ELEVATION_DEG = 25;
+// A made-up ground scene on Mars: a lander on dusty terrain under a tan sky (the landing sites are real; the ground is not).
+export const MARS_SUN_ELEVATION_DEG = 25; // how high the Sun is in the sky
 const PAD_RADIUS = 3;
-const SIZE = 700; // ground is a SIZE x SIZE square; fog hides the edge
+const SIZE = 700; // width of the ground square in metres (fog hides its edge)
 const SKY = 0xd9a878, SKY_TOP = 0xb07a52, DUST = 0xa5603a;
 
-/** Terrain height (m) at (x, z): gentle rolling dunes and swells, flat under the lander. */
+// Returns the ground height at a spot: gentle hills, flat under the lander.
 export function marsHeight(x: number, z: number): number {
   const d = Math.hypot(x, z);
   const swell = (fbm(x / 70 + 11, z / 70 + 3, 4) - 0.5) * 9;
@@ -21,6 +18,7 @@ export function marsHeight(x: number, z: number): number {
   return (swell + ripple) * sstep(PAD_RADIUS, PAD_RADIUS + 8, d) * 0.85;
 }
 
+// The Mars ground scene: terrain, rocks, sky, lander and a walking camera.
 export class MarsSurfaceScene {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(38, 1, 0.05, 3000);
@@ -43,11 +41,12 @@ export class MarsSurfaceScene {
     c.left = -30; c.right = 30; c.top = 30; c.bottom = -30; c.near = 1; c.far = 300;
     sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.03;
-    this.scene.add(sun, sun.target, new THREE.HemisphereLight(0xe6b890, 0x6a3a22, 0.75)); // dusty sky scatters light into the shadows
+    this.scene.add(sun, sun.target, new THREE.HemisphereLight(0xe6b890, 0x6a3a22, 0.75));
     this.scene.add(this.buildGround(), this.buildRocks());
     this.setCameraPose(0);
   }
 
+  // Draws the tan sky gradient.
   private skyTexture(): THREE.Texture {
     const cv = document.createElement('canvas');
     cv.width = 4; cv.height = 256;
@@ -60,6 +59,7 @@ export class MarsSurfaceScene {
     return t;
   }
 
+  // Builds the hilly ground.
   private buildGround(): THREE.Mesh {
     const SEG = 220;
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
@@ -73,6 +73,7 @@ export class MarsSurfaceScene {
     return mesh;
   }
 
+  // Scatters rocks over the ground.
   private buildRocks(): THREE.InstancedMesh {
     const COUNT = 900, rand = rng(4);
     const geo = new THREE.IcosahedronGeometry(1, 2);
@@ -90,28 +91,29 @@ export class MarsSurfaceScene {
     return mesh;
   }
 
-  /** The lander, true size (`def.radiusKm` is half its longest dimension), standing on the pad. Clones the model: Spirit and Opportunity share one. */
+  // Loads the lander at its real size and stands it on the flat pad.
   async loadLander(loader: GLTFLoader, def: BodyDef): Promise<void> {
     const { wrapper } = await loadBody(def, loader);
-    wrapper.scale.multiplyScalar(def.radiusKm * 1000); // unit radius -> metres
+    wrapper.scale.multiplyScalar(def.radiusKm * 1000); // convert from km to metres
     const g = new THREE.Group();
     g.add(wrapper);
     g.updateMatrixWorld(true);
-    g.position.y -= new THREE.Box3().setFromObject(g).min.y + 0.02; // feet just sunk into the dust
-    g.rotation.y = 0.6; // heading is a guess
+    g.position.y -= new THREE.Box3().setFromObject(g).min.y + 0.02; // sink the feet slightly into the dust
+    g.rotation.y = 0.6; // which way it faces is a guess
     g.traverse((o) => { const mesh = o as THREE.Mesh; if (mesh.isMesh) { mesh.castShadow = true; mesh.receiveShadow = true; } });
     this.lookY = Math.max(0.35, new THREE.Box3().setFromObject(g).max.y * 0.5);
     this.scene.add(g);
   }
 
+  // Switches from the slow drifting camera to the visitor's own control.
   private enterManual(): void {
     if (this.manual) return;
-    this.manual = true; // from the first key or drag on, the visitor drives the camera
+    this.manual = true;
     const e = new THREE.Euler(0, 0, 0, 'YXZ').setFromQuaternion(this.camera.quaternion);
     this.yaw = e.y; this.pitch = e.x;
   }
 
-  /** Drag to look (pixels). */
+  // Turns the view as the mouse is dragged.
   look(dx: number, dy: number): void {
     this.enterManual();
     this.yaw -= dx * 0.004;
@@ -119,7 +121,7 @@ export class MarsSurfaceScene {
     this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
   }
 
-  /** Walk at eye height (1.4 m/s, 4 m/s running); `jump` leaves the ground with Mars gravity (3.71 m/s2): about 1.2 m up, 1.6 s in the air. */
+  // Walks, runs or jumps the camera across the ground (jumps use Mars gravity).
   walk(dt: number, forward: number, strafe: number, run: boolean, jump: boolean): void {
     if (!this.manual && !forward && !strafe && !jump) return;
     this.enterManual();
@@ -137,7 +139,7 @@ export class MarsSurfaceScene {
     this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
   }
 
-  /** Slow drift around the lander until the visitor takes over. t in seconds. */
+  // Slowly circles the lander until the visitor takes over.
   setCameraPose(t: number): void {
     if (this.manual) return;
     const a = 0.7 + 0.25 * Math.sin(t * 0.05);
@@ -147,6 +149,7 @@ export class MarsSurfaceScene {
     this.camera.lookAt(0, this.lookY, 0);
   }
 
+  // Frees the graphics memory.
   dispose(): void {
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;

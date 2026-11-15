@@ -4,7 +4,7 @@ import { createGLTFLoader } from '../../solar/gltf.ts';
 import type { BodyDef } from '../../solar/bodies.ts';
 import { MarsSurfaceScene } from '../../solar/marsSurface.ts';
 
-/** An illustrative ground scene for a Mars lander, over the explorer. The page's bar (Places, Home, Full view, Labels) stays on top; Full view or Esc goes back to orbit. */
+// Shows the made-up Mars ground scene for a lander, with walking controls. Esc or Full view returns to orbit.
 export default function GroundView({ def, leaving, onClose }: { def: BodyDef; leaving: boolean; onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 

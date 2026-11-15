@@ -3,10 +3,10 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
-import { assertSharedAssets } from './scripts/shared-assets'
-import { devRedirect, devTcBase } from './src/moon/tiles/devRedirect'
-import { renderIndexHtml } from './src/build/indexHtml'
-import { launchPlugins } from './scripts/launch-build'
+import { assertSharedAssets } from './scripts/shared-assets.ts'
+import { devRedirect, devTcBase } from './src/moon/tiles/devRedirect.ts'
+import { renderIndexHtml } from './src/build/indexHtml.ts'
+import { launchPlugins } from './scripts/launch-build.ts'
 
 // The app imports the Moon maps and the star list from the project's shared-assets/: name any missing file now, not as a resolve error later.
 assertSharedAssets()
@@ -89,8 +89,8 @@ function devTiles(): Plugin {
 
 const buildIdentity = (() => {
   try {
-    const commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-    const status = execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim()
+    const commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+    const status = execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
     return { commit, dirty: !!status }
   } catch { return { commit: 'unknown', dirty: true } }
 })()
@@ -111,7 +111,7 @@ export default defineConfig(({ command, mode }) => {
     server: { fs: { allow: ['.'] } },
     // MOON_SOURCEMAP=hidden (the publish scripts): maps are written for the Sentry upload, carry no sourceMappingURL comment and are deleted before any upload to the bucket.
     build: {
-      target: 'es2022', assetsInlineLimit: 0, chunkSizeWarningLimit: 1500, sourcemap: process.env.MOON_SOURCEMAP === 'hidden' ? 'hidden' : false,
+      target: 'es2022', assetsInlineLimit: 0, chunkSizeWarningLimit: 1700, sourcemap: process.env.MOON_SOURCEMAP === 'hidden' ? 'hidden' : false,
     },
   }
 })

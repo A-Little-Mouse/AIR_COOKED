@@ -3,13 +3,14 @@ import type { BodyDef } from './bodies.ts';
 
 const DEG = Math.PI / 180;
 
+// Builds the data for one lander.
 const lander = (id: string, name: string, parent: string, model: string, radiusKm: number, latDeg: number, lonDeg: number, site: string, info: string): BodyDef => ({
   id, name, type: 'lander', model: `/models/${model}.glb`, radiusKm, parent, pole: { ra: 0, dec: 90 }, rotationHours: 0, viewRadii: 4, labelRangeKm: parent === 'moon' ? 6e4 : 2.5e5,
   craft: { kind: 'surface', latDeg, lonDeg }, info,
   facts: [['Site', site], ['Position', `${Math.abs(latDeg).toFixed(2)}°${latDeg >= 0 ? 'N' : 'S'}, ${lonDeg.toFixed(2)}°E`]],
 });
 
-/** The landers and rovers on Mars. radiusKm = half the model's longest dimension (approximate, true scale). */
+// The landers and rovers on Mars (size is half the model's longest side).
 export const CRAFT_BODIES: BodyDef[] = [
   lander('viking-1', 'Viking 1 Lander', 'mars', 'craft/landers-rovers/viking-lander', 0.0018, 22.5, 312.0, 'Chryse Planitia',
     'Touched down on 20 July 1976 and sent the first pictures from the surface of Mars. It worked for over six years.'),
@@ -27,7 +28,7 @@ export const CRAFT_BODIES: BodyDef[] = [
     'Flew the first powered, controlled flight on another planet in April 2021, then kept flying for almost three years.'),
 ];
 
-/** Direction of a surface point in the Mars model's space (the model is turned 180° about Y: longitude 0 on -X, east toward +Z). */
+// Turns a latitude and longitude into a direction on Mars (the Mars model is turned 180° so it lines up).
 export function surfaceDirection(_parentId: string, latDeg: number, lonDeg: number, out: THREE.Vector3): THREE.Vector3 {
   const lat = latDeg * DEG, lon = lonDeg * DEG, c = Math.cos(lat);
   return out.set(-c * Math.cos(lon), Math.sin(lat), c * Math.sin(lon));

@@ -7,14 +7,7 @@ import { textureBytes } from '../../quality/ledger'
 import { trackGpu } from '../../quality/track'
 import { type Placement, attitudeQuat, fitPlacement, PLACEMENT_INVALID_Z } from '../lmPlacement'
 
-/**
- * The Apollo 17 Lunar Roving Vehicle, drawn over the ground pass the way the lunar module is: a three.js
- * scene with its own camera, rendered after the ground pass so the ground's depth hides what is behind a rise. Frame metres are
- * (east, north, up); three's axes are (east, up, south).
- *
- * What is real and what is not (the project says so on the page): the rover stands at the measured Station 1 stop of Apollo 17 (Haase et al.
- * control points); its heading is not known and is a guess.
- */
+// Draws the lunar rovers on the ground: the real Apollo 17 rover at Station 1, plus an extra one near the lunar module (the heading of both is a guess).
 const ROVER_LENGTH_M = 3.1
 const enu = (e: number, n: number, u: number): THREE.Vector3 => new THREE.Vector3(e, u, -n)
 
@@ -26,21 +19,21 @@ export class ActorLayer {
   private readonly sun = new THREE.DirectionalLight(0xffffff, Math.PI)
   private readonly ambient = new THREE.AmbientLight(0xffffff, 0)
   private blobTex: THREE.Texture | null = null
-  private get blob(): THREE.Texture { return (this.blobTex ??= ActorLayer.blobTexture()) } // made on first use (needs a DOM)
+  private get blob(): THREE.Texture { return (this.blobTex ??= ActorLayer.blobTexture()) } // made the first time it's needed
 
 
-  /** The rover, once loaded: where it stands (frame metres, east and north), the heading it is set at, and its four wheel contact points (model space). */
-  private rover: { root: THREE.Group; pads: THREE.Vector3[]; shadow: Shadow; e: number; n: number; headingDeg: number; placed: Placement | null } | null = null
-  private roverRev = -1
-  private roverFitAt = -1e9
-  /** Where the rover is wanted (frame metres), or null until `setRoverSite`. */
-  private roverSite: { e: number; n: number; headingDeg: number } | null = null
+  // The rovers once loaded: where each stands, which way it faces, and where its wheels touch.
+  private rovers: Array<{ root: THREE.Group; pads: THREE.Vector3[]; shadow: Shadow; e: number; n: number; headingDeg: number; placed: Placement | null; rev: number; fitAt: number }> = []
+  // Where the rovers should stand (the first is the real Apollo 17 rover).
+  private roverSites: Array<{ e: number; n: number; headingDeg: number }> = []
+  // The rover the Sun's shadow is drawn for (the nearest one).
+  private shadowFocus = 0
 
   private sunDir = new THREE.Vector3(0, 1, 0)
 
   constructor() {
     this.sun.castShadow = true
-    this.sun.shadow.mapSize.set(512, 512) // 16 m across: 3 cm texels, plenty for a rover
+    this.sun.shadow.mapSize.set(512, 512) // sharp enough for a rover
     trackGpu('lm', 'actor-shadow-est', 512 * 512 * 4)
     const c = this.sun.shadow.camera
     c.left = -8; c.right = 8; c.top = 8; c.bottom = -8; c.near = 1; c.far = 80
@@ -49,7 +42,7 @@ export class ActorLayer {
     this.scene.add(this.sun, this.sun.target, this.ambient)
   }
 
-  /** A soft round alpha texture for the fake contact shadows on the ground (the ground pass cannot receive a second caster). */
+  // Makes a soft round picture used as a fake shadow under each rover.
   private static blobTexture(): THREE.Texture {
     const s = 64, cv = document.createElement('canvas')
     cv.width = cv.height = s
@@ -62,6 +55,7 @@ export class ActorLayer {
     return new THREE.CanvasTexture(cv)
   }
 
+  // Makes one fake shadow patch for a rover.
   private makeShadow(): Shadow {
     const mat = new THREE.MeshBasicMaterial({ map: this.blob, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, toneMapped: false })
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat)
@@ -72,32 +66,33 @@ export class ActorLayer {
     return { mesh }
   }
 
+  // Makes a model loader that can open compressed files.
   private loaderFor(base: string): GLTFLoader {
     const loader = new GLTFLoader()
-    loader.setDRACOLoader(new DRACOLoader().setDecoderPath(`${base}draco/`)) // the rover file is Draco-compressed
+    loader.setDRACOLoader(new DRACOLoader().setDecoderPath(`${base}draco/`)) // the rover file is compressed
     return loader
   }
 
   private roverRequested = false
-  /** Rover distance beyond which nothing of it is drawn, and within which its model is fetched (m). */
+  // How close the visitor must be to load the rover, and how far away it is still drawn (metres).
   private static readonly ROVER_LOAD_M = 400
   private static readonly ROVER_DRAW_M = 900
 
-  /** The rover (1.4 MB) is fetched only once the visitor is within 400 m of its stand. `camE`, `camN`: the camera in frame metres. */
+  // Loads the rover model once the visitor is within 400 m of any rover.
   maybeLoadRover(base: string, camE: number, camN: number): void {
-    const site = this.roverSite
-    if (this.roverRequested || !site || Math.hypot(camE - site.e, camN - site.n) > ActorLayer.ROVER_LOAD_M) return
+    if (this.roverRequested || !this.roverSites.some((s) => Math.hypot(camE - s.e, camN - s.n) <= ActorLayer.ROVER_LOAD_M)) return
     this.roverRequested = true
     void this.loadRover(this.loaderFor(base), `${base}actors/lunar-roving-vehicle.glb`).catch((err) => { console.error('rover failed to load', err); this.roverRequested = false })
   }
 
+  // Loads the rover model and makes one copy for each stand.
   private async loadRover(loader: GLTFLoader, url: string): Promise<void> {
     const gltf = await loader.loadAsync(url)
     const model = gltf.scene
     model.updateMatrixWorld(true)
     const box = new THREE.Box3().setFromObject(model)
     const size = box.getSize(new THREE.Vector3())
-    const alongX = size.x >= size.z // the longest horizontal side becomes the length (model +z is the front, as the module's)
+    const alongX = size.x >= size.z // the longest side is the rover's length
     const length = alongX ? size.x : size.z, width = alongX ? size.z : size.x
     const scale = ROVER_LENGTH_M / length
     const inner = new THREE.Group()
@@ -119,51 +114,66 @@ export class ActorLayer {
     trackGpu('lm', 'rover-textures-est', bytes)
     const hl = (length * scale) / 2 * 0.72, hw = (width * scale) / 2 * 0.9
     const pads = [new THREE.Vector3(-hw, 0, -hl), new THREE.Vector3(hw, 0, -hl), new THREE.Vector3(-hw, 0, hl), new THREE.Vector3(hw, 0, hl)]
-    root.visible = false
-    this.scene.add(root)
-    const shadow = this.makeShadow()
-    shadow.mesh.visible = false
-    shadow.mesh.scale.set(ROVER_LENGTH_M * 1.25, 2.4, 1)
-    this.rover = { root, pads, shadow, e: 0, n: 0, headingDeg: 90, placed: null }
-    if (this.roverSite) this.setRoverSite(this.roverSite.e, this.roverSite.n, this.roverSite.headingDeg)
+    for (let i = 0; i < this.roverSites.length; i++) {
+      const r = i === 0 ? root : root.clone(true) // copies share the same textures
+      r.visible = false
+      this.scene.add(r)
+      const shadow = this.makeShadow()
+      shadow.mesh.visible = false
+      shadow.mesh.scale.set(ROVER_LENGTH_M * 1.25, 2.4, 1)
+      this.rovers.push({ root: r, pads, shadow, e: 0, n: 0, headingDeg: 90, placed: null, rev: -1, fitAt: -1e9 })
+    }
+    this.roverSites.forEach((s, i) => this.placeRoverAt(i, s.e, s.n, s.headingDeg))
   }
 
-  /** Where the rover stands (frame metres east and north) and the bearing its front points to. */
+  // Sets where the first rover stands and which way it faces.
   setRoverSite(e: number, n: number, headingDeg: number): void {
-    this.roverSite = { e, n, headingDeg }
-    if (!this.rover) return
-    Object.assign(this.rover, { e, n, headingDeg, placed: null })
-    this.roverRev = -1
+    this.roverSites[0] = { e, n, headingDeg }
+    this.placeRoverAt(0, e, n, headingDeg)
   }
 
-  roverPosition(): { e: number; n: number } | null { return this.roverSite ? { e: this.roverSite.e, n: this.roverSite.n } : null }
-  get roverReady(): boolean { return !!this.rover }
+  // Adds another rover at a spot.
+  addRoverSite(e: number, n: number, headingDeg: number): void {
+    this.roverSites.push({ e, n, headingDeg })
+    this.placeRoverAt(this.roverSites.length - 1, e, n, headingDeg)
+  }
 
-  /**
-   * Sits the rover on the ground under its four wheels (the plane through them, as the module's pads), when finer heights have arrived and not
-   * more often than every 1.5 s. `ground` probes the GPU: a few calls per fit, so it is rationed.
-   */
-  refitRover(now: number, patchRevision: number, ground: (e: number, n: number) => number, camDistM: number): void {
-    const r = this.rover
+  // Updates a rover's spot and marks it to be re-fitted to the ground.
+  private placeRoverAt(i: number, e: number, n: number, headingDeg: number): void {
+    const r = this.rovers[i]
     if (!r) return
-    r.root.visible = !!r.placed && camDistM < ActorLayer.ROVER_DRAW_M // nothing of it is drawn from far away
-    // Each fit is a few GPU readbacks, so it is rationed: a first placement within 500 m; a re-fit for finer heights only when it can be seen (within 200 m) and 4 s apart.
-    const first = !r.placed || r.placed.z < PLACEMENT_INVALID_Z
-    const needs = first ? camDistM < 500 : patchRevision !== this.roverRev && camDistM < 200
-    if (!needs || now - this.roverFitAt < (first ? 1500 : 4000)) return
-    this.roverFitAt = now
-    const p = fitPlacement(r.pads, r.headingDeg, (de, dn) => ground(r.e + de, r.n + dn), { maxTiltDeg: 25 })
-    if (p.z < PLACEMENT_INVALID_Z) return // the ground cannot answer yet: try again later
-    r.placed = p
-    this.roverRev = patchRevision
-    r.root.position.set(r.e, p.z, -r.n)
-    r.root.quaternion.copy(attitudeQuat(p))
-    r.root.visible = camDistM < ActorLayer.ROVER_DRAW_M
-    r.root.updateMatrixWorld(true)
-    this.placeBlob(r.shadow, r.e, r.n, p.z, 0)
+    Object.assign(r, { e, n, headingDeg, placed: null, rev: -1 })
   }
 
-  /** The Sun's direction in the frame (unit, east/north/up), the exposure scale and how much of the Sun reaches the ground. */
+  // Returns where the first rover stands, for the "go to" button.
+  roverPosition(): { e: number; n: number } | null { const s = this.roverSites[0]; return s ? { e: s.e, n: s.n } : null }
+  get roverReady(): boolean { return this.rovers.length > 0 }
+
+  // Sits each rover on the ground under its wheels, once the terrain detail is loaded.
+  refitRovers(now: number, patchRevision: number, ground: (e: number, n: number) => number, camE: number, camN: number): void {
+    let nearest = Infinity
+    this.rovers.forEach((r, i) => {
+      const camDistM = Math.hypot(camE - r.e, camN - r.n)
+      if (camDistM < nearest) { nearest = camDistM; this.shadowFocus = i }
+      r.root.visible = !!r.placed && camDistM < ActorLayer.ROVER_DRAW_M // hide it when far away
+      // Fitting is costly, so only do it when near and not too often.
+      const first = !r.placed || r.placed.z < PLACEMENT_INVALID_Z
+      const needs = first ? camDistM < 500 : patchRevision !== r.rev && camDistM < 200
+      if (!needs || now - r.fitAt < (first ? 1500 : 4000)) return
+      r.fitAt = now
+      const p = fitPlacement(r.pads, r.headingDeg, (de, dn) => ground(r.e + de, r.n + dn), { maxTiltDeg: 25 })
+      if (p.z < PLACEMENT_INVALID_Z) return // ground not ready yet, try later
+      r.placed = p
+      r.rev = patchRevision
+      r.root.position.set(r.e, p.z, -r.n)
+      r.root.quaternion.copy(attitudeQuat(p))
+      r.root.visible = camDistM < ActorLayer.ROVER_DRAW_M
+      r.root.updateMatrixWorld(true)
+      this.placeBlob(r.shadow, r.e, r.n, p.z, 0)
+    })
+  }
+
+  // Updates the lighting to match the Sun and the ground's exposure.
   updateLight(sunFrame: THREE.Vector3, preExpose: number, sunShare: number, bounce: number): void {
     const s3 = enu(sunFrame.x, sunFrame.y, sunFrame.z).normalize()
     this.sunDir.copy(s3)
@@ -171,19 +181,19 @@ export class ActorLayer {
     this.sun.castShadow = sunShare > 0.01
     this.ambient.intensity = bounce * preExpose
     this.scene.environmentIntensity = preExpose
-    // The shadow camera follows what it shades (the rover): 30 m up the Sun's ray.
-    const at = this.rover?.root.position ?? new THREE.Vector3()
+    // Aim the shadow at the nearest rover.
+    const at = this.rovers[this.shadowFocus]?.root.position ?? new THREE.Vector3()
     this.sun.position.copy(s3).multiplyScalar(30).add(at)
     this.sun.target.position.copy(at)
     this.sun.target.updateMatrixWorld()
     const elev = Math.max(0.05, Math.min(1.4, Math.asin(Math.max(0, Math.min(1, sunFrame.z)))))
     this.sunElev = elev
     const sh = Math.max(0.0, Math.min(0.6, sunShare * 0.6))
-    for (const s of [this.rover?.shadow]) if (s) (s.mesh.material as THREE.MeshBasicMaterial).opacity = sh
+    for (const r of this.rovers) (r.shadow.mesh.material as THREE.MeshBasicMaterial).opacity = sh
   }
   private sunElev = 0.2
 
-  /** Lays a soft shadow decal on the ground at (e, n), stretched away from the Sun by the Sun's height. `lengthM` 0 = the rover's own size. */
+  // Lays a soft shadow patch on the ground, stretched away from the Sun.
   private placeBlob(s: Shadow, e: number, n: number, z: number, lengthM: number): void {
     const away = new THREE.Vector3(-this.sunDir.x, 0, -this.sunDir.z)
     const len = away.length() > 1e-4 ? away.normalize() : new THREE.Vector3(1, 0, 0)
@@ -194,8 +204,9 @@ export class ActorLayer {
     s.mesh.rotateZ(Math.atan2(-len.z, len.x))
   }
 
+  // Draws the rovers on top of the ground.
   render(renderer: THREE.WebGLRenderer, view: GroundView, aspect: number): void {
-    if (!this.rover?.root.visible) return
+    if (!this.rovers.some((r) => r.root.visible)) return
     const cam = this.camera
     cam.fov = 2 * Math.atan(view.tanHalf) * 180 / Math.PI
     cam.aspect = aspect
@@ -207,11 +218,12 @@ export class ActorLayer {
     cam.matrixAutoUpdate = false
     cam.matrixWorld.makeBasis(r, u, k).setPosition(enu(view.pos.x, view.pos.y, view.pos.z))
     cam.matrixWorldInverse.copy(cam.matrixWorld).invert()
-    // Their own shadow map is redrawn each frame (the module's is redrawn only when the Sun or the module moves).
+    // Redraw the rovers' shadows every frame.
     renderer.shadowMap.needsUpdate = true
     renderer.render(this.scene, cam)
   }
 
+  // Frees the graphics memory.
   dispose(): void {
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh

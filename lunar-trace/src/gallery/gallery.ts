@@ -10,7 +10,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const stage = $('stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping; // a white craft rolls off to light grey instead of clipping to flat white
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // keeps white models from turning flat white
 renderer.toneMappingExposure = 0.8;
 stage.appendChild(renderer.domElement);
 
@@ -32,6 +32,7 @@ const loader = createGLTFLoader();
 let current: THREE.Object3D | null = null;
 let token = 0;
 
+// Fits the 3D view to the window.
 function resize() {
   const { clientWidth: w, clientHeight: h } = stage;
   renderer.setSize(w, h);
@@ -41,6 +42,7 @@ function resize() {
 new ResizeObserver(resize).observe(stage);
 resize();
 
+// Frees the graphics memory of a model.
 function dispose(o: THREE.Object3D) {
   o.traverse((n) => {
     const m = n as THREE.Mesh;
@@ -53,7 +55,7 @@ function dispose(o: THREE.Object3D) {
   });
 }
 
-/** Scale the model to a unit size, centre it, and frame it. */
+// Sizes, centres and frames the model for the camera.
 function frame(model: THREE.Object3D) {
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
@@ -67,6 +69,7 @@ function frame(model: THREE.Object3D) {
   controls.update();
 }
 
+// Shows one spacecraft: loads its model and fills in its details.
 async function show(craft: Craft) {
   const my = ++token;
   document.querySelectorAll<HTMLButtonElement>('.craft').forEach((b) => b.classList.toggle('selected', b.dataset.id === craft.id));
@@ -87,7 +90,7 @@ async function show(craft: Craft) {
     if (my !== token) return dispose(gltf.scene);
     if (current) { scene.remove(current); dispose(current); }
     current = gltf.scene;
-    const dimmed = dimBrightModel(current); // too bright or white: softened
+    const dimmed = dimBrightModel(current); // tone down bright models
     if (import.meta.env.DEV) console.debug(`[dim] ${craft.id} ${dimmed.toFixed(2)}`);
     scene.add(current);
     frame(current);
@@ -98,7 +101,7 @@ async function show(craft: Craft) {
   }
 }
 
-// list, grouped by category
+// Build the spacecraft list, grouped by type.
 const list = $('list');
 for (const cat of Object.keys(CATEGORY_LABEL) as CraftCategory[]) {
   const h = document.createElement('h3');
@@ -113,7 +116,7 @@ for (const cat of Object.keys(CATEGORY_LABEL) as CraftCategory[]) {
     b.textContent = craft.name;
     b.addEventListener('click', () => show(craft));
     row.appendChild(b);
-    if (craft.video) { // a play button on the craft that have a video
+    if (craft.video) { // add a play button if there is a video
       const play = document.createElement('button');
       play.className = 'play';
       play.type = 'button';
@@ -127,16 +130,18 @@ for (const cat of Object.keys(CATEGORY_LABEL) as CraftCategory[]) {
   }
 }
 
-// video player: opens over the page; Esc, the cross or a click outside closes it (and stops the video)
+// Video player controls.
 const player = $('player'), video = $<HTMLVideoElement>('player-video');
+// Opens the video player and starts the video.
 function openVideo(craft: Craft) {
   if (!craft.video) return;
   $('player-title').textContent = craft.name;
   video.src = craft.video;
   player.hidden = false;
-  video.play().catch(() => undefined); // if the browser blocks autoplay the controls are there
+  video.play().catch(() => undefined); // if autoplay is blocked, the visitor can press play
   $<HTMLButtonElement>('player-close').focus();
 }
+// Stops and closes the video player.
 function closeVideo() {
   video.pause();
   video.removeAttribute('src');

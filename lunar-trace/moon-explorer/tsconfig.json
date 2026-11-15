@@ -13,6 +13,7 @@
     "verbatimModuleSyntax": true,
     "types": ["vite/client", "node"],
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "paths": { "virtual:moon-native-host": ["./src/native/nativeHostDefault.ts"] }
   },
   "include": ["src", "vite.config.ts"]

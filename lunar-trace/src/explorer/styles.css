@@ -110,7 +110,7 @@ button { color: inherit; }
 /* Ground view (Mars landers): a full-viewport scene over the explorer */
 .ground-view { position: fixed; inset: 0; z-index: 20; background: #000; }
 .ground-view canvas { width: 100%; height: 100%; display: block; }
-.ground-caption { position: absolute; left: 16px; top: 52px; max-width: min(34rem, calc(100% - 32px)); padding: 12px 16px; }
+.ground-caption { position: absolute; left: 16px; top: 16px; max-width: min(34rem, calc(100% - 32px)); padding: 12px 16px; }
 .ground-caption p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
 
 /* No loading bar: the scene fades in once it is ready */
@@ -118,8 +118,6 @@ button { color: inherit; }
 .app.ready .viewport, .app.ready .labels { opacity: 1; }
 
 /* Mars explorer: the Moon page's chrome (bottom pill bar, credits line, back link) */
-.mars-back { text-decoration: none; position: fixed; top: 16px; left: 18px; z-index: 30; font: 500 .66rem var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
-.mars-back:hover { color: var(--accent); }
 .mars-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 24px); }
 .mars-bar button { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--line-strong); background: rgba(14, 15, 20, .82); backdrop-filter: blur(10px); color: var(--text); font: 500 .67rem var(--mono); letter-spacing: .09em; text-transform: uppercase; cursor: pointer; transition: border-color .15s, color .15s; }
 .mars-bar button:hover, .mars-bar button.active { border-color: var(--accent); color: var(--accent); }
@@ -136,10 +134,9 @@ button { color: inherit; }
 .ground-caption .keys { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; }
 /* Held inside the home page (?bg=1): no controls, no input, like the Moon behind its headline */
 body.lt-bg .app { pointer-events: none; }
-body.lt-bg .mars-bar, body.lt-bg .mars-back, body.lt-bg .mars-credit, body.lt-bg .places, body.lt-bg .credits { display: none; }
+body.lt-bg .mars-bar, body.lt-bg .mars-credit, body.lt-bg .places, body.lt-bg .credits { display: none; }
 /* readable over the bright Mars ground */
-.mars-back, .mars-credit { text-shadow: 0 1px 8px rgba(0, 0, 0, .8); }
-.mars-back { color: var(--text); }
+.mars-credit { text-shadow: 0 1px 8px rgba(0, 0, 0, .8); }
 .mars-credit { color: var(--muted); }
 /* The ground view fades in on arrival and out on leaving, instead of cutting */
 .ground-view { animation: ground-in .9s ease both; transition: opacity .5s ease; }

@@ -10,8 +10,8 @@
  *
  * Pure (no Node or DOM), so scripts/csp-meta.test.mts checks the policy a build writes without running Vite.
  */
-import { PAGE_TITLE, PRODUCT_NAME, SITE_URL } from '../branding'
-import { telemetryConnectHosts } from './telemetryHosts'
+import { PAGE_TITLE, PRODUCT_NAME, SITE_URL } from '../branding.ts'
+import { telemetryConnectHosts } from './telemetryHosts.ts'
 
 export interface IndexHtmlEnv { VITE_SENTRY_DSN?: string; VITE_POSTHOG_KEY?: string; VITE_POSTHOG_HOST?: string }
 

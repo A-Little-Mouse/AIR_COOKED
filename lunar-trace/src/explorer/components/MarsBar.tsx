@@ -2,21 +2,19 @@ import { useState } from 'react';
 import type { BodyDef } from '../../solar/bodies.ts';
 import TablerIcon from './TablerIcon';
 
-/**
- * The Moon page's bottom bar for the Mars system, with the same icons and meanings: Places (the list), Home (back to the main page), Full view (the fixed
- * camera that shows the whole of Mars, from wherever you are zoomed in), Labels (off until you ask); and its Credits line.
- */
+
+// The bottom bar (Places, Home, Full view, Labels) and the Credits line.
 export default function MarsBar({ places, selectedId, labels, onSelect, onHome, onFullView, onLabels }: {
   places: BodyDef[]; selectedId: string; labels: boolean;
   onSelect: (id: string) => void; onHome: () => void; onFullView: () => void; onLabels: (on: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [credits, setCredits] = useState(false);
+  // Removes focus from a button after it is clicked.
   const blur = (e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.blur();
 
   return (
     <>
-      <a className="mars-back" href="/" onClick={(e) => { e.preventDefault(); onHome(); }}>← Relict</a>
       {open && (
         <div className="panel places" role="dialog" aria-label="Places">
           <ul>

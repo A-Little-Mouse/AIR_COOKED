@@ -68,6 +68,8 @@ export class GroundMode {
   private actorsRequested = false
   /** The rover's stand: Apollo 17 Station 1, 'LRV / center station 1' of the Haase et al. control points (a measured rover stop); its heading is a guess. */
   static readonly ROVER_STATION = { lon: 30.7865324, lat: 20.1569035, headingDeg: 105 }
+  /** The second rover, in frame metres east and north of the module, and the bearing its front points to (a guess). */
+  static readonly ROVER_2 = { e: 5, n: -8, headingDeg: 300 }
   /** The lunar module once its model has loaded and been set on the ground. */
   lm: LunarModule | null = null
   /** A phone class in the native app (main.ts sets it from the quality class and nativeHost): the module's bounce is lit without a PMREM environment (ground/bounceLight.ts). Web browsers keep PMREM. */
@@ -240,8 +242,7 @@ export class GroundMode {
     if (this.active) {
       const v = this.cam.view.pos
       this.actors.maybeLoadRover(import.meta.env.BASE_URL, v.x, v.y)
-      const site = this.actors.roverPosition()
-      if (site && this.actors.roverReady) this.actors.refitRover(now, this.patch.revision, (e, n) => this.groundZ(e, n), Math.hypot(v.x - site.e, v.y - site.n))
+      if (this.actors.roverReady) this.actors.refitRovers(now, this.patch.revision, (e, n) => this.groundZ(e, n), v.x, v.y)
     }
     if (this.active) {
       // Never wait for the GPU here: the one-ray range is read back through a fence, collected on a later frame, and the next one starts 200 ms after the last.
@@ -267,6 +268,9 @@ export class GroundMode {
     const st = GroundMode.ROVER_STATION
     const [re, rn] = offsetEN(LM_HAASE.lon, LM_HAASE.lat, st.lon, st.lat) // Haase frame: the frame's origin is the module in it
     this.actors.setRoverSite(re, rn, st.headingDeg)
+    // A second rover of the same model, near the module (a few metres south-east of it, across the camera's eye-level view): Relict's addition, not a measured stop (Apollo 17 carried one rover).
+    const near = GroundMode.ROVER_2
+    this.actors.addRoverSite(near.e, near.n, near.headingDeg)
   }
 
   /** Where the module and the rover are (frame metres east, north), for "go to". */

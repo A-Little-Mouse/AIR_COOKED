@@ -1,19 +1,20 @@
 import * as THREE from 'three';
 
-/** A model whose surfaces average brighter than this (0..1, as seen: sRGB) is dimmed to it, so white craft do not glare against the dark scene. */
+// Models brighter than this (0 to 1) get dimmed so they don't glare.
 export const MAX_ALBEDO = 0.55;
-/** ...but never to less than this share of its own colour, so a very white model stays recognisably white, only softer. */
+// Never dim a model below this share of its own colour.
 export const MIN_DIM = 0.45;
 
-/** How much to multiply a model's colours by, given its average brightness. 1 = leave it alone. */
+// Returns how much to dim a model of this brightness (1 means leave it).
 export function dimFactor(avgAlbedo: number): number {
   return avgAlbedo <= MAX_ALBEDO ? 1 : Math.max(MIN_DIM, MAX_ALBEDO / avgAlbedo);
 }
 
+// Perceived brightness of a colour.
 const lum = (r: number, g: number, b: number) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 const textureCache = new WeakMap<THREE.Texture, number>();
 
-/** Average brightness (sRGB luminance, 0..1) of a texture, read from a 16 x 16 copy; 1 if it cannot be read. */
+// Measures a texture's average brightness from a tiny copy.
 function textureAverage(tex: THREE.Texture): number {
   const known = textureCache.get(tex);
   if (known !== undefined) return known;
@@ -34,7 +35,7 @@ function textureAverage(tex: THREE.Texture): number {
 
 const rgb = { r: 0, g: 0, b: 0 };
 
-/** Average brightness of a model's surfaces, weighted by how many vertices each mesh has. */
+// Measures a whole model's average brightness.
 export function averageAlbedo(root: THREE.Object3D): number {
   let sum = 0, weight = 0;
   root.traverse((o) => {
@@ -52,7 +53,7 @@ export function averageAlbedo(root: THREE.Object3D): number {
   return weight ? sum / weight : 0;
 }
 
-/** Dim a model that is too bright or white (once per material). Returns the factor applied. */
+// Dims a model that is too bright or white, and returns how much.
 export function dimBrightModel(root: THREE.Object3D): number {
   const f = dimFactor(averageAlbedo(root));
   if (f >= 1) return 1;

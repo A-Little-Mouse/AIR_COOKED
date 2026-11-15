@@ -1,18 +1,14 @@
 import * as THREE from 'three';
 import { BODY_BY_ID, type BodyDef } from './bodies.ts';
 
-/**
- * Approximate positions: JPL "Keplerian elements for approximate positions of the major planets" (valid 1800-2050,
- * accuracy of arc-minutes), the Moon from mean lunar elements, and Phobos/Deimos as Keplerian orbits in Mars's
- * equatorial plane (their phase at J2000 is arbitrary). Scene units are km, Y is ecliptic north.
- */
+// Works out where Mars, Phobos and Deimos are at any date, using NASA/JPL's simple orbit formulas. Units are km.
 export const AU_KM = 149_597_870.7;
 export const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
 const DAY_MS = 86_400_000;
 const DEG = Math.PI / 180;
 const OBLIQUITY = 23.4392911 * DEG;
 
-type Rate = [number, number]; // [value at J2000, change per Julian century]
+type Rate = [number, number]; // a value at the year 2000 and how fast it changes per century
 interface Elements { a: Rate; e: Rate; I: Rate; L: Rate; peri: Rate; node: Rate }
 
 const PLANETS: Record<string, Elements> = {
@@ -24,11 +20,14 @@ const MARS_MOONS: Record<string, { a: number; e: number; periodDays: number }> =
   deimos: { a: 23_463, e: 0.00033, periodDays: 1.26244 },
 };
 
+// Time since the year 2000, in centuries.
 const centuries = (ms: number) => (ms - J2000_MS) / (DAY_MS * 36525);
+// Time since the year 2000, in days.
 const days = (ms: number) => (ms - J2000_MS) / DAY_MS;
+// Works out an orbit value at a given time.
 const at = (r: Rate, T: number) => r[0] + r[1] * T;
 
-/** Solve Kepler's equation M = E - e sin E (M in radians). */
+// Solves Kepler's equation, which turns time into position along an orbit.
 export function solveKepler(M: number, e: number): number {
   const twoPi = Math.PI * 2;
   M = ((((M + Math.PI) % twoPi) + twoPi) % twoPi) - Math.PI;
@@ -41,7 +40,7 @@ export function solveKepler(M: number, e: number): number {
   return E;
 }
 
-/** Orbit-plane point -> ecliptic J2000 -> scene axes (ecliptic x,y,z -> scene x,z,-y). Angles in radians. */
+// Turns a point on an orbit into a position in the scene.
 function perifocalToScene(xp: number, yp: number, I: number, w: number, node: number, out: THREE.Vector3): THREE.Vector3 {
   const cw = Math.cos(w), sw = Math.sin(w), cO = Math.cos(node), sO = Math.sin(node), cI = Math.cos(I), sI = Math.sin(I);
   const x = (cw * cO - sw * sO * cI) * xp + (-sw * cO - cw * sO * cI) * yp;
@@ -52,6 +51,7 @@ function perifocalToScene(xp: number, yp: number, I: number, w: number, node: nu
 
 interface Orbit { a: number; e: number; I: number; w: number; node: number; M: number }
 
+// Looks up the orbit of a body at a given time.
 function orbitOf(id: string, ms: number): Orbit | null {
   const T = centuries(ms);
   const el = PLANETS[id];
@@ -64,7 +64,7 @@ function orbitOf(id: string, ms: number): Orbit | null {
 }
 
 const poleCache = new Map<string, THREE.Vector3>();
-/** North pole direction in scene axes, from IAU right ascension / declination. */
+// Returns the direction a body's north pole points.
 export function poleVector(def: BodyDef): THREE.Vector3 {
   const c = poleCache.get(def.id);
   if (c) return c;
@@ -76,14 +76,14 @@ export function poleVector(def: BodyDef): THREE.Vector3 {
   return v;
 }
 
-/** In-plane basis (u, v) of the equatorial plane of a body, from its pole. */
+// Returns two directions lying along a body's equator.
 function equatorBasis(pole: THREE.Vector3): [THREE.Vector3, THREE.Vector3] {
   const ref = Math.abs(pole.x) < 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
   const u = ref.sub(pole.clone().multiplyScalar(ref.dot(pole))).normalize();
   return [u, new THREE.Vector3().crossVectors(pole, u)];
 }
 
-/** Position relative to the parent body (the Sun for planets), km, scene axes. */
+// Returns a body's position relative to what it orbits, in km.
 export function localPosition(def: BodyDef, ms: number, out: THREE.Vector3): THREE.Vector3 {
   if (def.id === 'sun') return out.set(0, 0, 0);
   const o = orbitOf(def.id, ms);
@@ -102,7 +102,7 @@ export function localPosition(def: BodyDef, ms: number, out: THREE.Vector3): THR
   return out.set(0, 0, 0);
 }
 
-/** Spin angle about the body's pole, radians, from an arbitrary zero. */
+// Returns how far a body has spun at a given time.
 export function spinAngle(def: BodyDef, ms: number): number {
   const d = days(ms);
   const turns = (d * 24) / def.rotationHours;
@@ -112,9 +112,7 @@ export function spinAngle(def: BodyDef, ms: number): number {
 const yAxis = new THREE.Vector3(0, 1, 0);
 const tmpQ = new THREE.Quaternion();
 
-/**
- * Orientation of a body's model (model +Y = north pole): align to the IAU pole, then spin.
- */
+// Returns the turn that points a body's model the right way and spins it.
 export function orientation(def: BodyDef, ms: number, out: THREE.Quaternion): THREE.Quaternion {
   out.setFromUnitVectors(yAxis, poleVector(def));
   const spin = spinAngle(def, ms);
