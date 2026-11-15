@@ -33,7 +33,11 @@ const TYPES: Record<string, string> = {
   '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.wasm': 'application/wasm', '.glb': 'model/gltf-binary', '.gz': 'application/octet-stream',
 };
 
-const portOpen = (port: number): Promise<boolean> => new Promise((done) => {
+/** On Windows npx is npx.cmd, which spawn() only runs through a shell. */
+const IS_WIN = process.platform === 'win32';
+const NPX = IS_WIN ? 'npx.cmd' : 'npx';
+
+const portOpen =(port: number): Promise<boolean> => new Promise((done) => {
   const s = connect({ port, host: '127.0.0.1' });
   s.once('connect', () => { s.destroy(); done(true); });
   s.once('error', () => done(false));
@@ -49,7 +53,7 @@ function moonBuilt(): Plugin {
     configureServer(server) {
       const log = (m: string): void => server.config.logger.info(`  Moon: ${m}`);
       if (process.env.MOON_DEV_AUTOSTART !== '0') {
-        child = spawn('npx', ['vite', 'build', '--watch', '--logLevel', 'warn'], { cwd: MOON_DIR, env: moonBuildEnv(), stdio: ['ignore', 'pipe', 'pipe'] });
+        child = spawn(NPX, ['vite', 'build', '--watch', '--logLevel', 'warn'], { cwd: MOON_DIR, env: moonBuildEnv(), stdio: ['ignore', 'pipe', 'pipe'], shell: IS_WIN });
         child.stdout?.on('data', (d: Buffer) => { const t = String(d); if (/built in/.test(t)) log('built (served at /moon/)'); else if (t.trim()) process.stdout.write(`  Moon: ${t}`); });
         child.stderr?.on('data', (d: Buffer) => process.stderr.write(`  Moon: ${d}`));
         child.on('exit', () => { child = null; });
@@ -95,8 +99,8 @@ function moonDevServer(): Plugin {
     async configureServer(server) {
       if (process.env.MOON_DEV_AUTOSTART === '0') return;
       if (await portOpen(MOON_PORT)) { server.config.logger.info(`  Moon: already running on :${MOON_PORT}`); return; }
-      child = spawn('npx', ['vite', '--port', String(MOON_PORT), '--strictPort'], {
-        cwd: MOON_DIR, stdio: 'inherit', env: { ...process.env, MOON_REMOTE_BASE: process.env.MOON_REMOTE_BASE ?? MOON_MIRROR },
+      child = spawn(NPX, ['vite', '--port', String(MOON_PORT), '--strictPort'], {
+        cwd: MOON_DIR, stdio: 'inherit', shell: IS_WIN, env: { ...process.env, MOON_REMOTE_BASE: process.env.MOON_REMOTE_BASE ?? MOON_MIRROR },
       });
       child.on('exit', () => { child = null; });
       server.httpServer?.once('close', stop);
