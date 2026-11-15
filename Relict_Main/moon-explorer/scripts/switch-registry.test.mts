@@ -18,7 +18,7 @@ const known = new Set([...SWITCHES, ...DEV_SWITCHES].map((s) => s.name))
 
 /** Names read that are not switches. Empty on purpose: add one only with a reason. */
 const NON_SWITCH: Record<string, string> = {
-  bg: 'Lunar Trace: the title slide embeds this page as its background (?bg=1: no controls, no input)',
+  bg: 'Relict: the title slide embeds this page as its background (?bg=1: no controls, no input)',
   // The envelope functional-test page (envelope-test.html, never part of the app): its own parameters.
   n: 'test page: CPU-twin sample count',
   real: 'test page: use the real 4k height map',

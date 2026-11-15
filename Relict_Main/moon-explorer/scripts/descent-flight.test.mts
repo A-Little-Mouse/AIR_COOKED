@@ -186,7 +186,7 @@ const envAt = (t: number, nowMs = 1e9, ground: ((e: number, n: number) => number
   }
   report.push(`hand-over from the rig: ${(total * 1737.4).toFixed(0)} km blended over ${HANDOVER_MS / 1000} s, largest frame step ${(maxPos * 1737400).toFixed(0)} m, ${maxAng.toFixed(2)} deg, field ${(maxFov * 100).toFixed(2)} %`)
   assert.ok(maxPos < total * 0.03, `position step ${maxPos} of ${total}`)   // a log-scale zoom: a few per cent of the distance per frame at most, never a rush
-  assert.ok(maxAng < 2, `orientation step ${maxAng}`) // Lunar Trace: the blend is 2 s, so a frame turns up to about 1.4 degrees (was 10 s, under 1)
+  assert.ok(maxAng < 2, `orientation step ${maxAng}`) // Relict: the blend is 2 s, so a frame turns up to about 1.4 degrees (was 10 s, under 1)
   const after = f.evaluate({ ...e0, nowMs: HANDOVER_MS + 1 })
   assert.ok(!after.blending)
   const flightCam = viewFromGround(e0.axes, after.view)
@@ -240,7 +240,7 @@ const envAt = (t: number, nowMs = 1e9, ground: ((e: number, n: number) => number
   near(f.evaluate(envAt(300, 1e9, () => 1.3)).lm.pos.z, f.evaluate(envAt(300, 1e9, () => 0)).lm.pos.z, 1e-9, 'no terrain offset high up')
 }
 
-// 10. The clock (Lunar Trace): the flight starts at the arrival, follows the schedule (LT_SEGMENTS) with a short lag, slows to the powered descent at -20 s and to the last approach at 640 s;
+// 10. The clock (Relict): the flight starts at the arrival, follows the schedule (LT_SEGMENTS) with a short lag, slows to the powered descent at -20 s and to the last approach at 640 s;
 //     fixed rates; playback stops at the hand-off; scrubbing clamps.
 {
   const f = new DescentFlight(path)

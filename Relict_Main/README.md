@@ -28,7 +28,7 @@ On Mars the landing sites are real, but the ground, rocks and lander headings ar
 ## Layout
 
 ```
-lunar-trace/
+Relict_Main/
 ├── src/            home page, Mars explorer, gallery
 ├── public/         models, videos and fonts
 ├── moon-explorer/  the realistic Moon (AGPL-3.0-only, see below)

@@ -1,4 +1,4 @@
-// Lunar Trace's viewpoint list: fast travel to the Apollo sites and Earthrise. (Upstream's longer test, written for its own list of flights and craters, is parked in parked/.)
+// Relict's viewpoint list: fast travel to the Apollo sites and Earthrise. (Upstream's longer test, written for its own list of flights and craters, is parked in parked/.)
 import assert from 'node:assert/strict'
 import { HOTSPOTS } from '../src/hotspots.ts'
 import { MOMENTS } from '../src/moments.ts'
@@ -38,4 +38,4 @@ assert.deepEqual(only.map((e) => e.name), ['Apollo 15'])
 
 // the card lines
 for (const e of all) assert.ok(shortLine(e.id, e.caption).length > 0, `${e.id} has a card line`)
-console.log('viewpoint-list (Lunar Trace): ok')
+console.log('viewpoint-list (Relict): ok')

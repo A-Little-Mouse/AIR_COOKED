@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { Vector3 } from 'three'
 import { EYE_HEIGHT_M, GroundCamera, JUMP_SPEED, MOON_G, WALK_SPEED } from '../src/ground/GroundCamera.ts'
 
-// First-person walking (Lunar Trace): eased walking, lunar jump, eye follows the ground.
+// First-person walking (Relict): eased walking, lunar jump, eye follows the ground.
 const view = (headingDeg: number) => ({ pos: new Vector3(0, 0, 3), headingDeg, pitchDeg: -5, rollDeg: 0, tanHalf: Math.tan(20 * Math.PI / 180) })
 const flat = (z0: number) => (_e: number, _n: number) => z0
 const run = (cam: GroundCamera, seconds: number, dt = 0.016): void => { for (let t = 0; t < seconds; t += dt) cam.step(t * 1000, dt) }

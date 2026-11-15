@@ -20,7 +20,7 @@ export const SHADOW_MODES: readonly ShadowMode[] = ['full', 'baked', 'fast', 'of
 export const DETAIL_MODES: readonly DetailMode[] = ['full', 'reduced']
 export const MOTION_MODES: readonly MotionMode[] = ['smooth', 'classic']
 export const STORAGE_KEY = 'moon.quality.v1'
-/** Lunar Trace runs on ordinary laptops next to a busy page, so the light preset is the default (the visitor can still pick Auto or High in the Quality sheet, or ?quality=high). */
+/** Relict runs on ordinary laptops next to a busy page, so the light preset is the default (the visitor can still pick Auto or High in the Quality sheet, or ?quality=high). */
 // (In a browser only: the node tests keep the upstream Auto default they were written against.)
 export const DEFAULT_PRESET: QualityPreset = typeof window === 'undefined' ? 'auto' : 'battery'
 

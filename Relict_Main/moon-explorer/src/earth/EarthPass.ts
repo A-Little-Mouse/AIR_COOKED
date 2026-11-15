@@ -192,7 +192,7 @@ export class EarthPass {
         done()
       }, (e: unknown) => { started = false; failed(e) })
     }
-    // Lazy (Lunar Trace): the four maps (about 1 MB) are fetched only once the Earth is near the view (`update`), or on `ensureLoaded`.
+    // Lazy (Relict): the four maps (about 1 MB) are fetched only once the Earth is near the view (`update`), or on `ensureLoaded`.
     if (lazy) { pass.startLoad = start; setTimeout(start, 8000) } // near the view, or 8 s after start at the latest (the Earth must never stay blank)
     else start()
     return { pass, loaded }

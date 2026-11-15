@@ -3,5 +3,5 @@
  * Explicit, by feature id: a name match would equate "Mons Hadley" with "Hadley Rille" and "Rimae Plato" with "Plato". Entries that name no feature
  * (View from Earth, Fly around the Moon, Earthrise, Long shadows at the terminator, The Moon behind a ridge, the Apollo landing sites) are absent.
  */
-// Lunar Trace's list is the Apollo landing sites only, which name no feature, so the table is empty.
+// Relict's list is the Apollo landing sites only, which name no feature, so the table is empty.
 export const VIEWPOINT_FEATURES: Readonly<Record<string, readonly string[]>> = {}

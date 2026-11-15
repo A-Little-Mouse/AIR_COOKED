@@ -4,4 +4,4 @@ The realistic Moon for Relict: a trimmed copy of [3D Moon](https://github.com/sk
 
 What was taken from 3D Moon, what we changed and removed, and which credits stay: see [`../README.md`](../README.md).
 
-It is started and built by the parent app (`npm run dev` and `npm run build` in `lunar-trace/`). To run it alone: `npm install && npm run dev:hosted` (port 5192; needs internet for the terrain tiles).
+It is started and built by the parent app (`npm run dev` and `npm run build` in `Relict_Main/`). To run it alone: `npm install && npm run dev:hosted` (port 5192; needs internet for the terrain tiles).

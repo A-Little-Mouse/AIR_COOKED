@@ -140,7 +140,7 @@ export function chaseView(lm: LmPose, rs: number, fovDeg = CHASE.fovDeg, shadowD
     if (fwd.lengthSq() < 1e-9) fwd.set(1, 0, 0).addScaledVector(up, -up.x)
     fwd.normalize()
     const side = new Vector3().crossVectors(up, fwd).normalize()
-    // (Lunar Trace: the observer stays on the same hand of the track all the way round. It used to be forced south of the SITE frame, which flips sides where the
+    // (Relict: the observer stays on the same hand of the track all the way round. It used to be forced south of the SITE frame, which flips sides where the
     // orbit passes the site's meridian; at a time-lapse that was a swing of tens of degrees in one frame. Near the site this is the same south side.)
     if (coastK > 0) {
       const trail = lm.pos.clone().addScaledVector(fwd, -CHASE_COAST.backM).addScaledVector(side, CHASE_COAST.sideM).addScaledVector(up, CHASE_COAST.upM)
@@ -230,7 +230,7 @@ export interface FlightFrame {
 
 /** Playback state and the camera for one moment of the flight. */
 /**
- * Lunar Trace: the Apollo 17 coast, arrival and landing as ONE continuous scene, about 40 s of film after a 4 s zoom onto the docked pair. It starts about 60,000 km out on the coast, then the arrival (about 3,000 km up,
+ * Relict: the Apollo 17 coast, arrival and landing as ONE continuous scene, about 40 s of film after a 4 s zoom onto the docked pair. It starts about 60,000 km out on the coast, then the arrival (about 3,000 km up,
  * descent/approach.ts: a modelled approach and orbit-insertion burn that ends on the track's own state), turns the pair around, undocks the lander and flies the real descent track to touchdown.
  * (The real undocking came 8517 s before ignition and the lander then circled the Moon for over an hour and a half; the film shows it minutes before the descent. The captions say so.)
  * Each part has a track-time span and a number of real seconds; the clock rates are derived from them, so the parts always add up. Change a duration and the rest follows.

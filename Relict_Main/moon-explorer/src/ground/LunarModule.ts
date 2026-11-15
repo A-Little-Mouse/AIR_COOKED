@@ -65,7 +65,7 @@ export class LunarModule {
   private rebase = new THREE.Vector3()
   private flying = false
   private plume: THREE.Mesh | null = null
-  /** Lunar Trace: the Apollo command module, docked on this module's top at the start of the landing film (loadCsm, setCsmOffset). */
+  /** Relict: the Apollo command module, docked on this module's top at the start of the landing film (loadCsm, setCsmOffset). */
   private csm: THREE.Group | null = null
   /** The command module's main-engine glow (a modelled cone from its bell, forward along the stack) and its length, metres. */
   private csmPlume: THREE.Group | null = null
@@ -372,7 +372,7 @@ export class LunarModule {
   }
 
   /**
-   * Lunar Trace: loads the command and service module (a reduced Block 2 craft, public/actors/apollo-csm.glb) and docks it on this module's top, nose down, its
+   * Relict: loads the command and service module (a reduced Block 2 craft, public/actors/apollo-csm.glb) and docks it on this module's top, nose down, its
    * docking probe's tip CSM_TIP_Y_M above the model origin on the Y axis. It is a child of `root`, so every pose of the module carries it. It starts hidden.
    */
   async loadCsm(url: string, dracoPath: string): Promise<void> {

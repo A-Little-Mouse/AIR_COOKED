@@ -54,7 +54,7 @@ export const HOTSPOTS: Hotspot[] = [
     { n: '15', place: 'Hadley–Apennine', lon: 3.63, lat: 26.13, caption: 'Landed in 1971, the first mission to drive a Lunar Roving Vehicle.' },
     { n: '16', place: 'Descartes Highlands', lon: 15.50, lat: -8.97, caption: 'Landed in 1972 in the Descartes Highlands, with a rover.' },
   ].map((a): Hotspot => ({
-    // Lunar Trace: the other Apollo landing sites, as a flight over the site (the 59 m terrain; the ground view exists only at Apollo 17).
+    // Relict: the other Apollo landing sites, as a flight over the site (the 59 m terrain; the ground view exists only at Apollo 17).
     id: `pin-apollo${a.n}`, label: `Apollo ${a.n}`, title: `Apollo ${a.n}: ${a.place}`, caption: a.caption, watch: '',
     time: () => keptMorning(`apollo${a.n}`, () => nextMorning(a.lon, a.lat, 15)),
     camera: { at: 'fly', lon: a.lon, lat: a.lat, dist: 1.06, pitch: 45 }, look: 'moon', dwellS: 10, needsTiles: true,

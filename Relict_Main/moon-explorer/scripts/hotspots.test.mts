@@ -21,7 +21,7 @@ for (const h of HOTSPOTS) {
   assert.ok(Number.isFinite(p.lon) && Number.isFinite(p.lat) && Math.abs(p.lat) <= 90, `${h.id}: pin`)
 }
 // Five places and the two list views that are not pins: From Earth and Apollo 17 at eye level (Plato left the list, 2026-10-20).
-assert.equal(HOTSPOTS.length, 8, 'Lunar Trace: Apollo 11, 12, 14, 15, 16, 17 (and its eye level), View from Earth')
+assert.equal(HOTSPOTS.length, 8, 'Relict: Apollo 11, 12, 14, 15, 16, 17 (and its eye level), View from Earth')
 assert.deepEqual(HOTSPOTS.filter((h) => h.pinned === false).map((h) => h.id).sort(), ['pin-apollo17-eye', 'pin-earth'])
 assert.equal(HOTSPOTS.find((h) => h.id === 'pin-apollo15')?.title, 'Apollo 15: Hadley–Apennine')
 // Both Apollo pins are the planner's fly-to (main.ts startSiteView), never the 1972 descent or the 26 s scripted one.

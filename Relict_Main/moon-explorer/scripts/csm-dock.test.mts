@@ -1,4 +1,4 @@
-// The command module on the lander's top, and its pull-away (Lunar Trace's landing film, descent/flight.ts, ground/LunarModule.ts loadCsm).
+// The command module on the lander's top, and its pull-away (Relict's landing film, descent/flight.ts, ground/LunarModule.ts loadCsm).
 import assert from 'node:assert/strict'
 import { CSM_TIP_Y_M, LT_COAST_X, LT_DOCK_RELEASE_S, LT_FILM_S, LT_SEGMENTS, LT_START_T, LT_UNDOCK_T, csmOffsetM } from '../src/descent/flight.ts'
 

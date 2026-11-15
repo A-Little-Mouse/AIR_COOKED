@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-15-explore-mars-design.md`
 
-**Not a git repo:** where a plan normally commits, each task ends with a checkpoint: `npm test && npx tsc -b` run from `lunar-trace/` with no failures.
+**Not a git repo:** where a plan normally commits, each task ends with a checkpoint: `npm test && npx tsc -b` run from `Relict_Main/` with no failures.
 
 ## Global Constraints
 
@@ -19,7 +19,7 @@
 - List = Mars, then Viking 1, Viking 2, Sojourner, Spirit, Opportunity, InSight, Ingenuity, then Phobos, Deimos. No Perseverance, no orbiters.
 - Landers use their real landing coordinates; ground terrain, rocks and heading are illustrative and the ground view says so in a caption.
 - `moon-explorer/` is not modified.
-- Styling follows `/moon/`: Space Grotesk + DM Mono, glass panels, "← Lunar Trace" style back link; Mars accent `#ff9a69` (`--accent-rgb: 255, 154, 105`).
+- Styling follows `/moon/`: Space Grotesk + DM Mono, glass panels, "← Relict" style back link; Mars accent `#ff9a69` (`--accent-rgb: 255, 154, 105`).
 - Out of scope: walking on Mars, real Mars terrain, other Apollo sites.
 
 ## Review Focus
@@ -72,7 +72,7 @@
 - Produces: `new SolarEngine(mount, labels, callbacks, world: WorldId = 'solar')`; `Callbacks.onArrive?: (id: string) => void`, called when an eased flight to a body finishes (the place where `updateFlight` sets `this.flight = null`).
 
 - [ ] **Step 1: Engine uses the world.** Replace `BODIES` with `bodiesOf(world)` and `CRAFT_BODIES` with `craftOf(world)` everywhere in `engine.ts` except `orbitLinePoints`/`placeL1` imports. The "fallback target" `byId.get('sun')!` and `getSelectedId`'s `'sun'` become the first loaded body's id. `onProgress` totals use the filtered list. Add the optional `onArrive` call.
-- [ ] **Step 2: App reads the world.** `const world = worldFromSearch(location.search)`; start id from `resolveStartId(world, hashPath)`; pass `world` to the engine; list is `listOf(world)`; `<h1>` is "Mars" in Mars world; back link is `← Lunar Trace` to `/mars/`, and the "Spacecraft →" link stays. Mars world sets the `mars-mode` body class always (the existing effect keys on the selected id; make it `world === 'mars' ||` the old test).
+- [ ] **Step 2: App reads the world.** `const world = worldFromSearch(location.search)`; start id from `resolveStartId(world, hashPath)`; pass `world` to the engine; list is `listOf(world)`; `<h1>` is "Mars" in Mars world; back link is `← Relict` to `/mars/`, and the "Spacecraft →" link stays. Mars world sets the `mars-mode` body class always (the existing effect keys on the selected id; make it `world === 'mars' ||` the old test).
 - [ ] **Step 2b: Run** `npm test && npx tsc -b` → pass.
 - [ ] **Step 3: Verify in the browser.** Run `MOON_DEV_AUTOSTART=0 npm run dev:site`; open `http://localhost:3000/explorer.html?world=mars#/earth` with the Playwright MCP. Expected: lands on Mars (not Earth), list shows exactly the ten Task 1 entries, no Sun glow, no console errors; clicking Deimos and a lander flies there. Open `explorer.html#/earth` (no world): unchanged solar system.
 - [ ] **Step 4: Checkpoint.**
@@ -134,7 +134,7 @@
 - [ ] **Step 1: Write failing tests.** `angularRadiusDeg(3396.2, 23463.2)` within 0.05 of 8.32; `marsElevationDeg(0)` is 90 (±1e-9); `marsElevationDeg(90)` is slightly negative (between −0.1 and 0); `marsElevationDeg(55)` between 30 and 40.
 - [ ] **Step 2: Run** `npm test` → fail.
 - [ ] **Step 3: Implement `deimosView.ts`.** Observer at 55° from the sub-Mars point, 2 m above a small dark-brown, noise-roughened Deimos surface (a sphere of the mean radius), camera looking at Mars; Mars (`/models/mars.glb` via `loadBody`) placed at `DEIMOS_ORBIT_KM` so its apparent size is true (`angularRadiusDeg`), lit as a gibbous phase; black sky, no stars. `setCameraPose(t)` drifts the view slightly.
-- [ ] **Step 4: Title page.** `mars/index.html` mirrors `index.html` (title "Mars — Lunar Trace"). `src/mars/main.ts` imports `../style.css` and `./mars.css`, adds `mars-mode` to `body`, renders the same hero layout as `src/main.ts` with a full-screen canvas behind it: headline "What we **leave** behind.", a Mars-specific lede, and buttons "Explore Mars ↗" (`/explorer.html?world=mars#/mars`), "← Lunar Trace" (`/`), "Spacecraft ↗" (`/gallery.html`). It runs `DeimosViewScene` on a `WebGLRenderer`; with `prefers-reduced-motion` it renders one frame and does not call `setCameraPose` after that; if the renderer or model load fails it logs and the text and buttons still work. `mars.css` sets the orange accent and a warm dark background (`--accent: #ff9a69`, `--accent-rgb: 255, 154, 105`), white text.
+- [ ] **Step 4: Title page.** `mars/index.html` mirrors `index.html` (title "Mars — Relict"). `src/mars/main.ts` imports `../style.css` and `./mars.css`, adds `mars-mode` to `body`, renders the same hero layout as `src/main.ts` with a full-screen canvas behind it: headline "What we **leave** behind.", a Mars-specific lede, and buttons "Explore Mars ↗" (`/explorer.html?world=mars#/mars`), "← Relict" (`/`), "Spacecraft ↗" (`/gallery.html`). It runs `DeimosViewScene` on a `WebGLRenderer`; with `prefers-reduced-motion` it renders one frame and does not call `setCameraPose` after that; if the renderer or model load fails it logs and the text and buttons still work. `mars.css` sets the orange accent and a warm dark background (`--accent: #ff9a69`, `--accent-rgb: 255, 154, 105`), white text.
 - [ ] **Step 5: Home page.** In `src/main.ts` the "View Mars" link becomes `<a class="ghost-button world-button" href="/mars/">Explore Mars <span class="arrow">↗</span></a>`.
 - [ ] **Step 6: Verify in the browser** (Playwright): `/mars/` shows Mars large over a dark Deimos horizon with the orange theme; "Explore Mars" opens the Mars explorer; home page button reads "Explore Mars" and goes to `/mars/`. Emulate a phone width (390 px): text and buttons do not overlap or scroll sideways. With reduced motion emulated, the view does not move.
 - [ ] **Step 7: Run** `npm test && npx tsc -b && npm run build:site` → pass, and `dist/mars/index.html` exists.

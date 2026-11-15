@@ -207,7 +207,7 @@ import { effectiveFootprintKm, GLOBAL_TEXEL_KM, WANT_TEXELS_FLIGHT, foldRafGap }
 import { tcGain } from './moon/tiles/tcDetail'
 import { detailStrength } from './moon/tiles/detail'
 import { SITES, type MoonLabel } from './labels/data'
-import './ui/lunarTrace.css' // Lunar Trace's look: last, so it wins
+import './ui/relict.css' // Relict's look: last, so it wins
 
 /**
  * The standalone site: the Moon now, full screen, from the Earth's centre;
@@ -248,7 +248,7 @@ const params = new URLSearchParams(location.search || (window as { __moonQuery?:
 const SHADOW_POLICY = parseShadowPolicy(params.toString())
 const termAaParam = parseFloat(params.get('termaa') ?? '')
 const STILL = params.get('still') === '1'
-/** "← Lunar Trace" (index.html) goes back to the site this page is mounted in; it is hidden in a still capture. */
+/** "← Relict" (index.html) goes back to the site this page is mounted in; it is hidden in a still capture. */
 if (STILL) document.getElementById('lt-back')?.setAttribute('hidden', '')
 /** `?flightfeel=0`: the earlier fly-to law, Home look and Home framing (journey/feel.ts). Default: v2. */
 const FLIGHT_FEEL = flightFeelOn(params)
@@ -270,14 +270,14 @@ const LIVE_TICK_MS = 60_000
 /** The opening (intro/): the title splash and the flyby to Home, for a person opening the page itself (intro/parse.ts). */
 /** This start is the reload a lost context caused (reloadAfterLoss; native/boot.ts reads the same key). */
 const AFTER_LOSS = ((): boolean => { try { return sessionStorage.getItem(LOST_RELOADS_KEY) !== null } catch { return false } })()
-/** Lunar Trace: no title splash, no flyby and no loading screen (the page opens straight on the view the link names). The upstream code stays in the tree behind this switch,
+/** Relict: no title splash, no flyby and no loading screen (the page opens straight on the view the link names). The upstream code stays in the tree behind this switch,
  *  and #preview (the loading line) is hidden in index.html. */
-const LUNAR_TRACE_INTRO = false
-/** Lunar Trace: no first-visit hotspot hints (the pins on the Moon and the navigator list stay). */
-const LUNAR_TRACE_FIRST_HOTSPOTS = false
-/** Lunar Trace: no timeline slider (the progress bar) while a flight to a mission plays; the camera motion itself is unchanged. */
-const LUNAR_TRACE_SCRUB = false
-const intro = !STILL && LUNAR_TRACE_INTRO && introWanted(params, navigator.webdriver === true, AFTER_LOSS) ? new IntroController() : null
+const RELICT_INTRO = false
+/** Relict: no first-visit hotspot hints (the pins on the Moon and the navigator list stay). */
+const RELICT_FIRST_HOTSPOTS = false
+/** Relict: no timeline slider (the progress bar) while a flight to a mission plays; the camera motion itself is unchanged. */
+const RELICT_SCRUB = false
+const intro = !STILL && RELICT_INTRO && introWanted(params, navigator.webdriver === true, AFTER_LOSS) ? new IntroController() : null
 intro?.mountEarly()
 // No splash (a shared link, an automated browser): #preview is the one loading state, with the bytes received so far.
 if (!intro) mountLoadingLine()
@@ -583,7 +583,7 @@ const hitShareDefault: 'off' | 'motion' | 'always' = quality.detected.cls === 'd
 /** The Quality sheet's preset over the device class: pixel-ratio caps and motion caps (`?motioncaps=` still forces the caps for an A/B). */
 let knobs = motionKnobs(quality.profile, getQuality().preset)
 const motionCapsParam = new URLSearchParams(location.search).get('motioncaps')
-// Lunar Trace: the cheaper terrain march during camera motion (flights, drags) is on for every class, not only phones; `?motioncaps=0` turns it off.
+// Relict: the cheaper terrain march during camera motion (flights, drags) is on for every class, not only phones; `?motioncaps=0` turns it off.
 const motionCapsFor = (): boolean => motionCapsParam === null ? true : motionCapsParam === '1'
 let motionCapsOn = motionCapsFor()
 // `?fixedshare=0..0.95` overrides the class's motion cost model for an A/B (0 = the pure pixel-count model).
@@ -620,9 +620,9 @@ let moon: MoonPass
 let stars: StarPass | null = null
 let starsLoading = false
 /** The faint real sky (HYG, CC BY-SA) behind the Moon: always on for a visitor; ?stars=0 turns it off for an audit or a comparison. */
-// Lunar Trace: off by default (a plain black sky); ?stars=1 turns the star field back on.
+// Relict: off by default (a plain black sky); ?stars=1 turns the star field back on.
 const starsOn = params.get('stars') === '1'
-/** Lunar Trace: draw at one pixel per CSS pixel unless ?dpr= says otherwise. A high-density screen otherwise draws up to four times the pixels, which is what makes the ray-marched Moon slow. */
+/** Relict: draw at one pixel per CSS pixel unless ?dpr= says otherwise. A high-density screen otherwise draws up to four times the pixels, which is what makes the ray-marched Moon slow. */
 const DEFAULT_MAX_DPR = 1
 /** How much of the star field is shown, 0..1: eases to the button's state over STARS_FADE_MS, never a pop. */
 let starsLevel = 0
@@ -2338,7 +2338,7 @@ function render(now: number, scale: number, band: BandState | null = null, final
         applyFloor()
         // A new floor never restarts or teleports an in-progress descent: its clock is monotonic, and stepDescent's distance lag absorbs the step in the floor.
         if (active.readyCoarse && patchSiteId === 'a17') {
-          // Lunar Trace: the module's model (0.7 MB + the Draco decoder) is not fetched from orbit; a landing moment, the ground view and the navigator's eye-level step load it.
+          // Relict: the module's model (0.7 MB + the Draco decoder) is not fetched from orbit; a landing moment, the ground view and the navigator's eye-level step load it.
           ensureGround()
         }
         markMoved()
@@ -4650,7 +4650,7 @@ function goViewpoint(kind: 'hover' | 'eye'): void {
 let flightPath: DescentPath | null = null
 let flightHeldByStop = false
 
-/** Lunar Trace: at the click, the lander, the command module and the descent track start loading behind the landing's own start-up (the site data), so the film does not wait on them. */
+/** Relict: at the click, the lander, the command module and the descent track start loading behind the landing's own start-up (the site data), so the film does not wait on them. */
 function prepareLanding(): void {
   const g = ensureGround()
   g?.setRoverEnabled(false)
@@ -4662,7 +4662,7 @@ async function startFlight(seq: number): Promise<void> {
   declareExposureCut()
   const g = ensureGround()
   if (!g) return
-  g.setRoverEnabled(false) // Lunar Trace: no rover in the landing
+  g.setRoverEnabled(false) // Relict: no rover in the landing
   flightCaptionAt = -1
   flightPath ??= await DescentPath.load()
   if (seq !== playSeq) return
@@ -5262,7 +5262,7 @@ const FIXED_APPROACH_MS = 1500
  * roll blend from the current pose. Then one monotone descent to the ground-level end view. No separate fly-to, no hover. SITE_DROP_MS is the
  * apex-to-end time at the altitude zoom law's pace; the time is SITE_DROP_MS_PER_END_DOUBLING per doubling of the height down to the end (a start above the apex takes longer, 14 s from 12 R).
  */
-/** Lunar Trace: the flight down to a landing site runs this much faster than upstream's pace. */
+/** Relict: the flight down to a landing site runs this much faster than upstream's pace. */
 const SITE_SPEEDUP = 1.3
 const SITE_DROP_MS = 11000 / SITE_SPEEDUP
 /** The drop's time from the apex is this per doubling of the height down to the end altitude (about 6e-4 R), not under SITE_DROP_MIN_MS: 1.5 R up takes 11 s. */
@@ -5902,7 +5902,7 @@ function prefetchLanderAssets(preload = false): void {
   })
 }
 function playMoment(m: Moment, instant = false, afterLoad = false): void {
-  // Lunar Trace: every view except the landing flight gets the rover back (a no-op until the ground view is open and near it).
+  // Relict: every view except the landing flight gets the rover back (a no-op until the ground view is open and near it).
   if (m.camera.at !== 'descent') groundMode?.setRoverEnabled(true)
   moonSurfaceTurn.stopInertia()
   // A moment that does not land beside the module frees one a replaced moment preloaded (GPU memory); the preload also frees itself after a minute untaken.
@@ -6025,7 +6025,7 @@ function playMoment(m: Moment, instant = false, afterLoad = false): void {
     carryDate(shownBefore, instant)
     return
   }
-  // Lunar Trace: the Apollo 17 landing, from lunar orbit to touchdown on the real descent track (src/descent/).
+  // Relict: the Apollo 17 landing, from lunar orbit to touchdown on the real descent track (src/descent/).
   if (cam.at === 'descent') {
     clearMomentUrl()
     caption.show('The coast to the Moon', 'America and Challenger, docked, have been coasting from Earth for about three days; the last hours are shown. (The path is modelled; this project has no data for it.)')
@@ -6331,7 +6331,7 @@ function runNavAction(a: NavAction, opts?: { resume?: boolean; replay?: boolean 
   switch (a.kind) {
     case 'pin': { const h = hotspotList.find((x) => x.id === a.id); if (h) playPin(h); break }
     case 'moment':
-      // Lunar Trace: the landing waits for the site's data first; say so at once, so a click is never silent.
+      // Relict: the landing waits for the site's data first; say so at once, so a click is never silent.
       if (a.id === 'land-like-apollo17') { caption.show('Apollo 17 landing', 'Loading the landing site…'); prepareLanding() }
       // The caption under the pill describes a place; a flight or a view of another entry does not share it.
       if (pinShown && navApi?.state().entries[navApi.state().state.pos?.entry ?? -1]?.id !== pinShown.h.id) { pinShown = null; caption.clear() }
@@ -6701,7 +6701,7 @@ let pinShown: { h: Hotspot; /** The caption title: the place, and the date when 
 /** Home's caption waits for the picture: the Home line stays hidden until the move home has arrived. */
 let homeCaptionHeld = false
 /**
- * Lunar Trace: one click on Apollo 17 must end on the ground. If the flight there settles and the ground view is still not open (it used to
+ * Relict: one click on Apollo 17 must end on the ground. If the flight there settles and the ground view is still not open (it used to
  * take a second click), the same step runs once more by itself. Any other pin or list action cancels it.
  */
 let groundNetToken = 0
@@ -6723,7 +6723,7 @@ function groundSafetyNet(): void {
 }
 function playPin(h: Hotspot, retry = false): void {
   if (!retry) groundNetToken++
-  // Lunar Trace: one tap on Apollo 17 goes the whole way down to the eye-level ground view (it used to stop at the site and need a second tap).
+  // Relict: one tap on Apollo 17 goes the whole way down to the eye-level ground view (it used to stop at the site and need a second tap).
   if (h.id === 'pin-apollo17') { const eye = hotspotList.find((x) => x.id === 'pin-apollo17-eye'); if (eye) h = eye }
   firstHotspotsApi?.noteFlight(h.id)
   // A tap on a pin is the visitor asking for this place now: the idle prefetch steps aside for what the move itself needs.
@@ -6802,7 +6802,7 @@ function goHome(at?: Date): void {
   pendingLanding = null
   cancelRoute()
   stopMoments()
-  // Lunar Trace: from the ground the way out is the straight climb over the lander, looking down (the 'over the site' glide), so the pull-back to the whole Moon starts from a clean overhead view,
+  // Relict: from the ground the way out is the straight climb over the lander, looking down (the 'over the site' glide), so the pull-back to the whole Moon starts from a clean overhead view,
   // not from a low, tilted pose that the long fly-to then has to untangle.
   if (groundMode?.active) { leaveGround(false, () => goHome(at), true); return }
   clearAutoRetry()
@@ -7064,7 +7064,7 @@ function applyHeights(h: HeightMap): void {
 /** After the first frame: the heights and the Earth's maps. Their requests start now, not before the Moon is on screen. */
 function startDeferredLoads(): void {
   api.firstFrameAt = performance.now()
-  // Lunar Trace: tell the page that embeds this one (the title slide) that the Moon is on screen.
+  // Relict: tell the page that embeds this one (the title slide) that the Moon is on screen.
   const announce = (): void => { if (window.parent !== window) window.parent.postMessage({ type: 'lt-ready' }, location.origin) }
   if (params.get('bg') === '1') {
     // As the title slide's background: announce as soon as the heights and the Earth's maps are in and a moment has passed (about two seconds on a normal connection); at the latest after 8 s.
@@ -7076,10 +7076,10 @@ function startDeferredLoads(): void {
     }, 250)
   } else announce()
   // The Gazetteer table (9,080 names) is a lazy chunk, fetched after the Moon is on screen; the label search, close-up names and centre caption read it once it lands.
-  // Lunar Trace: a few seconds later still, so the first tiles and maps have the bandwidth first (the label search and the flight prefetch load it on demand).
-  // Lunar Trace: only when the Labels layer is on (it is off by default, and in the main page's background); the flight prefetch loads it on demand too.
+  // Relict: a few seconds later still, so the first tiles and maps have the bandwidth first (the label search and the flight prefetch load it on demand).
+  // Relict: only when the Labels layer is on (it is off by default, and in the main page's background); the flight prefetch loads it on demand too.
   if (labelsApi?.isOn()) setTimeout(() => void loadGazetteer().catch(() => undefined), 12_000)
-  // Lunar Trace: a service worker (public/sw.js) keeps the terrain and imagery tiles on the device, so a second visit does not download them again.
+  // Relict: a service worker (public/sw.js) keeps the terrain and imagery tiles on the device, so a second visit does not download them again.
   if (import.meta.env.PROD && !STILL && 'serviceWorker' in navigator) {
     const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/'
     void navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => undefined)
@@ -7111,7 +7111,7 @@ async function init(): Promise<void> {
   sun = new SunPass(common3)
   ridgePass = new RidgePass(common3)
   ridgePass.haze = RIDGE_HAZE
-  // Lunar Trace: the Earth's maps (about 1 MB) load when the Earth comes near the view, not at start, unless the link asks for the Earth view.
+  // Relict: the Earth's maps (about 1 MB) load when the Earth comes near the view, not at start, unless the link asks for the Earth view.
   const earthEager = params.get('view') === 'earth' || params.get('start') === 'earth'
   if (FAST_FIRST && (!EARTH_IN_FIRST_FRAME || !earthEager)) {
     const d = EarthPass.loadDeferred(common3, time, renderer.capabilities.getMaxAnisotropy(), !earthEager)
@@ -7368,7 +7368,7 @@ async function init(): Promise<void> {
   // First-visit hotspots: first load only, never on a shared link, ?still=1, the archive or the debug sheet (ui/firstHotspots.ts); ?hotspots=1 forces, =0 turns off.
   if (!STILL && bar) {
     const mode = hotspotsMode({ params, still: STILL, archive: ARCHIVE, debug: debugEnabled(location.search), automated: navigator.webdriver === true, seen: readRemembered(() => localStorage).seen })
-    if (mode !== 'off' && LUNAR_TRACE_FIRST_HOTSPOTS) {
+    if (mode !== 'off' && RELICT_FIRST_HOTSPOTS) {
       window.addEventListener('resize', () => { if (firstHotspotsApi) { firstHotspotsApi.place(); markDirty() } })
       firstHotspotsApi = createFirstHotspots(document.getElementById('ui') as HTMLElement, {
         list: () => hotspotList, select: (h) => { setUsageSource('hotspot'); playPin(h) }, store: () => localStorage, forced: mode === 'forced',
@@ -7479,7 +7479,7 @@ async function init(): Promise<void> {
       wake: markDirty,
     })
   }
-  // Lunar Trace: no zoom tape (the km scale on the left edge); `zoomTapeUi` stays null and every call on it is optional.
+  // Relict: no zoom tape (the km scale on the left edge); `zoomTapeUi` stays null and every call on it is optional.
   void mountZoomTape
   if (!STILL) siteRingUi = mountSiteRing(document.getElementById('ui') as HTMLElement)
   // With the pill the two ground views are the Apollo 17 entry's first two steps: no second control that names them.
@@ -7512,7 +7512,7 @@ async function init(): Promise<void> {
     })
     // A visitor's slider lives in the navigator pill and shows for a moment's flight, its lead-in and a few seconds after it ends; a plain fly-to (a pin, Home) has none.
     if (ARCHIVE) scrubUi = mountJourneyScrub((document.querySelector('.tours') ?? document.getElementById('ui')) as HTMLElement, scrub, markMoved)
-    else if (navApi && LUNAR_TRACE_SCRUB) scrubUi = mountJourneyScrub(navApi.sliderSlot, scrub, markMoved, (h) => scrubHandleShown(h.id))
+    else if (navApi && RELICT_SCRUB) scrubUi = mountJourneyScrub(navApi.sliderSlot, scrub, markMoved, (h) => scrubHandleShown(h.id))
     ridgeUi = mountRidgeUi(document.getElementById('ui') as HTMLElement, { lift: liftOff, pause: pauseRidge, skip: skipRidge })
   }
   // Everything a step can need is probed and mounted: the list is trimmed to what exists and a tap made meanwhile runs now.
@@ -7607,15 +7607,15 @@ function scheduleIdlePrefetch(): void {
   const run = (): void => {
     if (TILE_BASE) void prefetch(pinPrefetchTargets())
     if (!PATCH_BASE || patchState === 'loading') return
-    // Lunar Trace: no idle prefetch of the lunar module (0.9 MB with its decoder); a landing moment prefetches it itself (`momentNeedsLander`).
+    // Relict: no idle prefetch of the lunar module (0.9 MB with its decoder); a landing moment prefetches it itself (`momentNeedsLander`).
     for (const id of ['a17', 'a11']) if (patchSitesFound.has(id)) void import('./moon/patch/PatchLayer').then((m) => m.prefetchPatch(`${PATCH_BASE}${id}/`))
   }
   const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback
   setTimeout(() => (idle ? idle(run, { timeout: 4000 }) : run()), 1500)
 }
 
-// Lunar Trace: the title slide shows this page behind its headline (?bg=1: no controls, no input) and drives it by message: play a moment, switch the background
-// mode off when the visitor presses View Moon, and take over the "← Lunar Trace" link. Same origin only.
+// Relict: the title slide shows this page behind its headline (?bg=1: no controls, no input) and drives it by message: play a moment, switch the background
+// mode off when the visitor presses View Moon, and take over the "← Relict" link. Same origin only.
 if (params.get('bg') === '1') document.body.classList.add('lt-bg')
 window.addEventListener('message', (e: MessageEvent) => {
   if (e.origin !== location.origin) return

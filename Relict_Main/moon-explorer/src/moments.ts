@@ -116,7 +116,7 @@ export const MOMENTS: Moment[] = [
     needsTiles: true,
   },
   {
-    // Lunar Trace: the title slide's Earthrise, held and ready in about two seconds: a still camera just off the limb (the base maps are enough, no tiles), the Earth over the lunar horizon.
+    // Relict: the title slide's Earthrise, held and ready in about two seconds: a still camera just off the limb (the base maps are enough, no tiles), the Earth over the lunar horizon.
     id: 'earthrise-bg', label: 'Earthrise', title: 'Earthrise', caption: 'The Earth rising over the lunar horizon.', watch: '',
     time: () => new Date('1968-12-24T16:39:39Z'), camera: { at: 'earthrise', dist: 2.7 }, look: 'earth', fovDeg: 30, dwellS: 3600, // the lens is the same 30 degrees as the whole-Moon view, so flying between them does not stretch the Moon
   },
@@ -389,7 +389,7 @@ export const ARCHIVED_MOMENTS: Moment[] = [{
   needsTier: true,
 }]
 
-// Lunar Trace: the real-clock Apollo 17 descent, from lunar orbit to touchdown, is offered again (the Places list's "Apollo 17 landing").
+// Relict: the real-clock Apollo 17 descent, from lunar orbit to touchdown, is offered again (the Places list's "Apollo 17 landing").
 MOMENTS.push(...ARCHIVED_MOMENTS)
 
 export const momentById = (id: string): Moment | undefined => MOMENTS.find((m) => m.id === id)

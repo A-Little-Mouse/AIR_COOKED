@@ -79,7 +79,7 @@ export const CREDIT_CATALOG: readonly CreditEntry[] = [
     links: [{ label: 'NASA Apollo Lunar Module model', href: 'https://science.nasa.gov/3d-resources/apollo-lunar-module/' }, { label: 'NASA media usage guidelines', href: 'https://www.nasa.gov/nasa-brand-center/images-and-media/' }],
   },
   {
-    // Lunar Trace: the command module in the landing film. CC BY 3.0 requires this credit wherever the model is shown.
+    // Relict: the command module in the landing film. CC BY 3.0 requires this credit wherever the model is shown.
     id: 'apollo-csm', title: 'Command and service module model',
     credit: '"Apollo 3D: Command Module and Service Module Block 2" by mesapilgrim (Blend Swap), CC BY 3.0',
     detail: 'The exterior of a generic Apollo Block 2 command and service module, reduced from the original model (interior, tanks and launch-escape tower removed). It is not Apollo 17\'s own craft, America, and carries none of its markings. It appears docked on the lander at the start of the Apollo 17 landing.',

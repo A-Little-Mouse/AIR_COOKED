@@ -497,7 +497,7 @@ export function mountLabels(root: HTMLElement, host: LabelsHost, initiallyOn = f
       }
       if (gazPick) rows.push(...gazPick.rows)
     } else { gazPick = null; gazNeedsReconciliation = false }
-    // Lunar Trace: the Labels button shows the lunar missions only (the landing and impact sites), not the seas, craters and ranges.
+    // Relict: the Labels button shows the lunar missions only (the landing and impact sites), not the seas, craters and ranges.
     if (MISSIONS_ONLY) { const keep = rows.filter(isApollo); rows.length = 0; rows.push(...keep) }
     // Order within a tier: the major names by fame (curated.ts FAME), the line last; the others larger first, missions by outcome.
     const order = (l: ShownLabel): number => {

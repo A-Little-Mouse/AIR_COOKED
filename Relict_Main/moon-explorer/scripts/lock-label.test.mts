@@ -240,7 +240,7 @@ function camOver(lon: number, lat: number, spanKm: number, aspect = 16 / 9): Cam
   // Self-hosted font, no font service.
   const css = readFileSync('src/ui/lockLabel.css', 'utf8')
   assert.ok(!css.includes('.lock-label.dim'), 'a moving lock has no dimmed ghost style')
-  assert.match(css, /font-family: var\(--lt-mono\)/, 'Lunar Trace: the lock label uses the shared mono font (DM Mono, self-hosted in ui/lunarTrace.css)')
+  assert.match(css, /font-family: var\(--lt-mono\)/, 'Relict: the lock label uses the shared mono font (DM Mono, self-hosted in ui/relict.css)')
   assert.ok(existsSync('public/fonts/dm-mono-400.woff2'))
   for (const f of ['index.html', 'src/ui/lockLabel.css', 'src/ui/lockLabel.ts', 'src/main.ts']) assert.ok(!readFileSync(f, 'utf8').includes('fonts.googleapis'), `${f}: no Google Fonts call`)
   assert.match(readFileSync('public/THIRD-PARTY-NOTICES.txt', 'utf8'), /DM Mono {2}\(SIL Open Font License 1\.1\)/)

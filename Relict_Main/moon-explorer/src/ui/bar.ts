@@ -362,7 +362,7 @@ export function mountBar(root: HTMLElement, c: BarController): BarApi {
     if (open) { refresh(); anchorSheet() }
   }
 
-  // Lunar Trace: Home goes back to the main page (the title slide this Moon is embedded in); the old Home (zoom out to the whole Moon) is the Full view button.
+  // Relict: Home goes back to the main page (the title slide this Moon is embedded in); the old Home (zoom out to the whole Moon) is the Full view button.
   const home = addItem({ id: 'home', label: 'Home', ariaLabel: 'Back to the main page', icon: ICON.home, order: 0, onClick: () => {
     setTimeOpen(false)
     if (window.parent !== window) window.parent.postMessage({ type: 'lt-back' }, location.origin)

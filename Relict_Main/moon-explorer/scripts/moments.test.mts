@@ -6,7 +6,7 @@ import { flyTanHalf, poseBasis } from '../src/camera/pose.ts'
 import { Vector3 } from 'three'
 
 const ordered = ['first-light', 'earthrise']
-assert.equal(MOMENTS.some((m) => m.id === 'land-like-apollo17'), true, 'Lunar Trace offers the powered descent (Apollo 17 landing)')
+assert.equal(MOMENTS.some((m) => m.id === 'land-like-apollo17'), true, 'Relict offers the powered descent (Apollo 17 landing)')
 assert.ok(ARCHIVED_MOMENTS.some((m) => m.id === 'land-like-apollo17'), 'the archived powered descent source remains available')
 for (const gone of ['edge-of-night', 'into-sunlight', 'earthshine']) assert.equal(MOMENTS.some((m) => m.id === gone), false, `${gone} is removed`)
 const actual = ordered.map((id) => MOMENTS.findIndex((m) => m.id === id))

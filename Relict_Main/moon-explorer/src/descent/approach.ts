@@ -1,5 +1,5 @@
 /**
- * Lunar Trace: the coast to the Moon and the arrival at the Moon, a MODELLED prelude to the Apollo 17 descent track. The track starts in the descent orbit; before it there is no data in this project.
+ * Relict: the coast to the Moon and the arrival at the Moon, a MODELLED prelude to the Apollo 17 descent track. The track starts in the descent orbit; before it there is no data in this project.
  * Here the docked command module and lander come in from about 3,000 km up and fire the command module's main engine to slow into that orbit, ending exactly on the track's own
  * state at JOIN_T, so the flight is one continuous path from the approach to the touchdown.
  *

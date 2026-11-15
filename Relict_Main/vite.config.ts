@@ -39,7 +39,7 @@ function moonBuilt(): Plugin {
   let child: ChildProcess | null = null;
   const stop = (): void => { child?.kill(); child = null; };
   return {
-    name: 'lunar-trace-moon-built',
+    name: 'relict-moon-built',
     apply: 'serve',
     configureServer(server) {
       const log = (m: string): void => server.config.logger.info(`  Moon: ${m}`);
@@ -85,7 +85,7 @@ function moonDevServer(): Plugin {
   let child: ChildProcess | null = null;
   const stop = (): void => { child?.kill(); child = null; };
   return {
-    name: 'lunar-trace-moon-dev',
+    name: 'relict-moon-dev',
     apply: 'serve',
     async configureServer(server) {
       if (process.env.MOON_DEV_AUTOSTART === '0') return;

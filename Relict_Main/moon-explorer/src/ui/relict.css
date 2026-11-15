@@ -1,4 +1,4 @@
-/* Lunar Trace's look for the Moon: the same fonts, colours and glass as the title slide, explorer and gallery.
+/* Relict's look for the Moon: the same fonts, colours and glass as the title slide, explorer and gallery.
    Loaded last, so it wins. The accent below replaces the upstream pale blue everywhere (they read var(--lt-accent)). */
 @font-face { font-family: 'Space Grotesk'; src: url('/fonts/space-grotesk-latin.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
 @font-face { font-family: 'DM Mono'; src: url('/fonts/dm-mono-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
@@ -29,7 +29,7 @@ html, body, button, input, select, textarea { font-family: var(--lt-sans); }
 .ground-panel button { font-size: 0.8125rem; letter-spacing: 0.01em; }
 .ground-panel button[aria-pressed='true'] { box-shadow: 0 0 18px rgba(var(--lt-accent-rgb), 0.28); }
 
-/* the way back to the title slide, in the style of the other pages' "← Lunar Trace" link */
+/* the way back to the title slide, in the style of the other pages' "← Relict" link */
 .lt-back {
   position: fixed; z-index: 80; top: max(16px, env(safe-area-inset-top, 0px)); left: max(18px, env(safe-area-inset-left, 0px));
   display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
@@ -40,7 +40,7 @@ html, body, button, input, select, textarea { font-family: var(--lt-sans); }
 .lt-back:hover { color: var(--lt-accent); border-color: rgba(var(--lt-accent-rgb), 0.55); box-shadow: 0 0 18px rgba(var(--lt-accent-rgb), 0.2); }
 .lt-back:focus-visible { outline: 2px solid var(--lt-accent); outline-offset: 2px; }
 
-/* Lunar Trace: the date/time control and the "More" menu are not part of the experience (the Moon is lit for now; credits are the link at the bottom left). */
+/* Relict: the date/time control and the "More" menu are not part of the experience (the Moon is lit for now; credits are the link at the bottom left). */
 .bar [data-bar='time'], .bar [data-bar='more'], #bar-time, #bar-more { display: none !important; }
 
 /* The bar's buttons speak the main menu's language: pill shapes, a hairline border, a lime border and lime ink on hover, a filled lime pill (dark ink) when on,
@@ -58,10 +58,10 @@ html, body, button, input, select, textarea { font-family: var(--lt-sans); }
 .bar button:active:not(:disabled) { transform: translateY(1px); }
 .bar .nav-count, .bar button .lbl, .bar-when, .nav-count { font-family: var(--lt-mono); letter-spacing: 0.06em; }
 
-/* Lunar Trace: no timeline/progress slider while a flight plays. */
+/* Relict: no timeline/progress slider while a flight plays. */
 .journey-scrub, .nav-pill .journey-scrub { display: none !important; }
 
-/* Lunar Trace: no on-screen look/zoom/stick pad (up/down, + -, the dial) in the bar: the mouse, wheel and W A S D do it. */
+/* Relict: no on-screen look/zoom/stick pad (up/down, + -, the dial) in the bar: the mouse, wheel and W A S D do it. */
 .bar .touch-ctl-pad, .bar .tc-toggle, .bar-padrow, .touch-ctl { display: none !important; }
 
 /* The bar as separate pills, like the main menu's buttons: no shared container, each control its own glass pill with a hairline border and a gap between them;
@@ -88,10 +88,10 @@ html, body, button, input, select, textarea { font-family: var(--lt-sans); }
 .bar .nav-slider, .bar .bar-navslot, .bar .nav-pill, .bar .bar-padslot { display: contents; }
 .bar [data-bar='home'], .bar [data-bar='full-view'] { margin-left: 0; }
 
-/* Lunar Trace: no feature-name readout (the bracketed "target lock" naming the crater or sea at the centre while you zoom) and no centre caption. */
+/* Relict: no feature-name readout (the bracketed "target lock" naming the crater or sea at the centre while you zoom) and no centre caption. */
 .lock-label, .dock > .centre-caption { display: none !important; }
 
-/* Lunar Trace: no feature search box (the search field of the Labels layer) and no "← Lunar Trace" link in the Moon. */
+/* Relict: no feature search box (the search field of the Labels layer) and no "← Relict" link in the Moon. */
 .moon-labels .ml-search, .ml-search, #lt-back { display: none !important; }
 
 .bar [data-bar='full-view'] { padding: 0 18px 0 14px; }

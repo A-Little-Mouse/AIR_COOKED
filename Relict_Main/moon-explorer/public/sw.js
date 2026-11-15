@@ -1,4 +1,4 @@
-/* Lunar Trace: keeps the Moon's terrain and imagery tiles on the device. Cache-first for GET requests to the data mirror; everything else goes to the network untouched. */
+/* Relict: keeps the Moon's terrain and imagery tiles on the device. Cache-first for GET requests to the data mirror; everything else goes to the network untouched. */
 const CACHE = 'lt-moon-tiles-v1'
 const MAX_ENTRIES = 900
 const MIRROR = /^https:\/\/storage\.googleapis\.com\/.*\/moon\//

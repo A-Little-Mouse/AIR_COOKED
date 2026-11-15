@@ -263,7 +263,7 @@ export class GroundMode {
   /** Loads the NASA model and sets it on the fused ground (needs the ground pass ready: the patch loaded). The mesh code is a separate chunk. */
   /** Loads the astronaut and the rover (once). */
   /**
-   * Lunar Trace: the Apollo 17 landing flight draws no rover and loads none; the rover (1.4 MB) comes with the ordinary Apollo 17 views.
+   * Relict: the Apollo 17 landing flight draws no rover and loads none; the rover (1.4 MB) comes with the ordinary Apollo 17 views.
    * `setRoverEnabled(true)` starts its load the first time the ground view is wanted without the landing.
    */
   private roverEnabled = true
@@ -303,7 +303,7 @@ export class GroundMode {
     return true
   }
 
-  /** Lunar Trace: docks the command module on the loaded lander for the landing film (a no-op when it is there already or the file is missing). */
+  /** Relict: docks the command module on the loaded lander for the landing film (a no-op when it is there already or the file is missing). */
   async loadCsm(): Promise<void> {
     const base = import.meta.env.BASE_URL
     await this.lm?.loadCsm(`${base}actors/apollo-csm.glb`, `${base}${LM_DRACO_DIR}`).catch((err) => console.warn('Command module unavailable:', (err as Error).message))

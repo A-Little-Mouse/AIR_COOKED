@@ -163,7 +163,7 @@ export class DescentPath {
     knots.push({ t: 0, p: [p.E_m[0], p.N_m[0], p.U_m[0]], v: [p.vE_ms[0], p.vN_ms[0], p.vU_ms[0]], alt: p.alt_m[0] })
     for (let i = 1; i < knots.length; i++) if (!(knots[i].t > knots[i - 1].t)) throw new Error('orbit rows are not increasing in time')
     this.knots = knots
-    // Lunar Trace: the path begins at the arrival (a modelled approach, descent/approach.ts); the track's own orbit rows take over at JOIN_T
+    // Relict: the path begins at the arrival (a modelled approach, descent/approach.ts); the track's own orbit rows take over at JOIN_T
     this.tMin = COAST_T0
     this.tMax = p.t_s[p.t_s.length - 1]
     this.cols = {

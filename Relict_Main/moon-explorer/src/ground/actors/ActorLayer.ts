@@ -30,7 +30,7 @@ export class ActorLayer {
   private shadowFocus = 0
 
   private sunDir = new THREE.Vector3(0, 1, 0)
-  /** Lunar Trace: the landing flight draws no rover (GroundMode.setRoverEnabled). */
+  /** Relict: the landing flight draws no rover (GroundMode.setRoverEnabled). */
   hidden = false
 
   constructor() {

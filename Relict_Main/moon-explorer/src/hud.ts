@@ -498,7 +498,7 @@ export class Hud {
     const brandEnd = document.createElement('span')
     brandEnd.className = 'brand-text'
     brandEnd.textContent = ')'
-    // Lunar Trace: the original repository, credited in plain sight beside the Credits link (AGPL source offer too).
+    // Relict: the original repository, credited in plain sight beside the Credits link (AGPL source offer too).
     const orig = document.createElement('a')
     orig.className = 'credit-link credit-origin'
     orig.href = 'https://github.com/skylumi-labs/3d-moon'

@@ -1,7 +1,7 @@
 # Explore Mars: design (approved 2026-11-15)
 
 ## Intent
-Make "View Mars" feel like the Moon experience: a Mars title slide, then a Mars-only explorer with Moon-style controls and a list of the Mars spacecraft, each shown in a ground-level scene like the Moon's Apollo 11 view. Why: the Mars side of Lunar Trace is currently a plain solar-system link.
+Make "View Mars" feel like the Moon experience: a Mars title slide, then a Mars-only explorer with Moon-style controls and a list of the Mars spacecraft, each shown in a ground-level scene like the Moon's Apollo 11 view. Why: the Mars side of Relict is currently a plain solar-system link.
 
 ## Goals
 - Home "View Mars" becomes "Explore Mars" and opens `/mars/`.

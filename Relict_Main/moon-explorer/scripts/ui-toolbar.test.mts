@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 const read = (p: string): string => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8')
 const bar = read('src/ui/bar.ts')
 const main = read('src/main.ts')
-assert.match(bar, /id: 'home', label: 'Home', ariaLabel: 'Back to the main page'/, 'Lunar Trace: Home goes back to the main page; the old Home is the Full view button')
+assert.match(bar, /id: 'home', label: 'Home', ariaLabel: 'Back to the main page'/, 'Relict: Home goes back to the main page; the old Home is the Full view button')
 assert.doesNotMatch(bar, /id: 'about'/, 'no About button')
 assert.match(bar, /\[\.\.\.items\.values\(\)\]\.sort\(\(a, b\) => a\.item\.order - b\.item\.order\)/, 'bar buttons are placed in their visual order, so the Tab order is the order on screen (Home, Labels, Time, More)')
 // Owner review 2026-10-23, #12 (bar clutter): no Share button; Quality, Relief and Credits are in the More sheet at every width, not only on a phone; while manual

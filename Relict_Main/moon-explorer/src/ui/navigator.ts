@@ -69,9 +69,9 @@ function btn(cls: string, text: string, aria: string, nav?: string): HTMLButtonE
   return b
 }
 
-// Lunar Trace: the cards' stills are our own renders of the lunar module and rover models (public/thumbs/, made by dev/thumbs.html), not the tile mirror's.
-/** Lunar Trace: the arrow keys do not step through viewpoints. */
-const LUNAR_TRACE_ARROWS = false
+// Relict: the cards' stills are our own renders of the lunar module and rover models (public/thumbs/, made by dev/thumbs.html), not the tile mirror's.
+/** Relict: the arrow keys do not step through viewpoints. */
+const RELICT_ARROWS = false
 const THUMBS = `${(import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/'}thumbs/`
 
 /**
@@ -126,7 +126,7 @@ export function mountNavigator(root: HTMLElement, bar: BarApi, host: NavigatorHo
   stopB.setAttribute('aria-hidden', 'true')
   stopB.disabled = true
   sliderSlot.append(stopB)
-  // Lunar Trace: no previous, next or Back buttons (they stay built, unattached, so the pill's state code is unchanged); the list is the way to move between places.
+  // Relict: no previous, next or Back buttons (they stay built, unattached, so the pill's state code is unchanged); the list is the way to move between places.
   pill.append(sliderSlot, nameB)
   bar.navSlot.append(pill)
   // The caption is a button too: the list stays one tap away while Return stands in the list button's place, and while a flight hides it. Hidden until a viewpoint is chosen.
@@ -350,8 +350,8 @@ export function mountNavigator(root: HTMLElement, bar: BarApi, host: NavigatorHo
   // Not in the flight's slider (it is in the pill): there they move the slider (navKeys.ts).
   // The arrows remain visible when Return shows, so Left and Right keep stepping viewpoints.
   const onKey = (e: KeyboardEvent): void => {
-    // Lunar Trace: Left and Right no longer step through viewpoints.
-    const step = LUNAR_TRACE_ARROWS ? navArrowStep({ key: e.key, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, inInput: e.target instanceof HTMLInputElement }) : null
+    // Relict: Left and Right no longer step through viewpoints.
+    const step = RELICT_ARROWS ? navArrowStep({ key: e.key, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, inInput: e.target instanceof HTMLInputElement }) : null
     if (!step) return
     e.preventDefault(); e.stopPropagation()
     if (step === 'prev') { back(); return }
