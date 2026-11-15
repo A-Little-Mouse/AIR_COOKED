@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import './fonts.css';
 
 :root {
   --bg: #08090d;
@@ -297,10 +297,7 @@ body.moon-live .moon-still { opacity: 0; }
 /* Mars: a second slide on the home page (orange and white), a preloaded Mars system behind it (iframe of the explorer), and the same fades as the Moon */
 body.mars-mode { --bg: #120a07; --accent: #ff9a69; --accent-rgb: 255, 154, 105; --text: #fff8f2; }
 body.mars-mode::before { background: radial-gradient(circle at 74% 12%, rgba(var(--accent-rgb), .12), transparent 31rem), linear-gradient(115deg, #120a07 0%, #1a0f0a 48%, #120a07 100%); }
-.mars-bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
-body.on-mars .mars-bg.ready { opacity: 1; }
-body.mars-live .mars-bg { opacity: 0; }
-.mars-scrim { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .9s ease; background: linear-gradient(90deg, rgba(18, 10, 7, .86), rgba(18, 10, 7, .35) 46%, transparent 72%); }
+body.mars-live .mars-scrim { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .9s ease; background: linear-gradient(90deg, rgba(18, 10, 7, .86), rgba(18, 10, 7, .35) 46%, transparent 72%); }
 body.on-mars .mars-scrim { opacity: 1; }
 body.mars-live .mars-scrim { opacity: 0; transition-duration: 1.2s; }
 .mars-page { position: fixed; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .8s ease, visibility 0s .8s; }
@@ -308,6 +305,7 @@ body.on-mars .mars-page { opacity: 1; visibility: visible; pointer-events: auto;
 body.on-mars .moon-page, body.on-mars .moon-scrim, body.on-mars .moon-bg, body.on-mars .moon-still { opacity: 0; pointer-events: none; }
 body.on-mars .moon-page { visibility: hidden; }
 body.mars-live .mars-page { opacity: 0; pointer-events: none; }
-.mars-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: -4; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+.mars-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: -2; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+.mars-frame.ready { opacity: 1; } /* held behind the Mars slide's text */
 .mars-frame.on { z-index: 6; opacity: 1; pointer-events: auto; }
 @media (max-width: 640px) { .mars-page .hero-copy { padding: 28px 18px; } }

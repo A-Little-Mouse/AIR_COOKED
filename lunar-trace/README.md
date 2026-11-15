@@ -5,9 +5,8 @@
 | Page | What it is |
 |---|---|
 | `/` | Title slide: Earthrise, then a ground-level view of the Apollo 11 lander at Tranquility Base |
-| `/explorer.html` | True-scale solar system (real orbits), with the landers, rovers and satellites we have models of |
-| `/?mars` | The home page on its Mars slide (`/mars/` redirects here): Mars from Deimos. **Explore Mars** pulls back and fades in the whole Mars system, preloaded behind it, as the Moon is |
-| `/explorer.html?world=mars` | The Mars system (Mars, Phobos, Deimos, the Sun as light): the Moon page's bar (Places, Home = back to the main page, Full view = the fixed whole-Mars camera, Labels, off at first). Each lander opens an illustrative ground scene (`G`; walk with W A S D, `Esc` goes back) |
+| `/?mars` | The home page on its Mars slide (`/mars/` redirects here): Mars large beside the text, with Phobos in front of it (the whole Mars system, preloaded behind it). **Explore Mars** hands it over and flies to the Sun side, where the face is fully lit, as the Moon is |
+| `/explorer.html?world=mars` | The Mars system (Mars, Phobos, Deimos, the Sun as light): the Moon page's bar (Places, Home = back to the main page, Full view = the fixed camera on the Sun side, the whole face lit, Labels, off at first). Each lander opens an illustrative ground scene (`G`; walk with W A S D, `Esc` goes back) |
 | `/gallery.html` | Spacecraft gallery: every model in `assets/source-models`, viewable in 3D |
 | `/moon/` | **The realistic Moon** (**View Moon**): real terrain and imagery, down to walking on the Apollo 17 landing site |
 
@@ -33,10 +32,9 @@ On Mars the landing sites are real, but the ground scenes (terrain, rocks, the l
 
 ```
 lunar-trace/
-├── src/                the site: title slide, solar-system explorer, gallery
+├── src/                the site: title slide (Moon and Mars), Mars explorer, gallery
 ├── public/             models (optimised) and textures for the site
 ├── moon-explorer/      the realistic Moon: a trimmed copy of 3D Moon (see below), AGPL-3.0-only
-│   └── parked/         code we took out of the build for now (the walking astronaut)
 ├── scripts/            build-moon.mjs: builds the Moon and mounts it in dist/
 ├── docs/               hand-off notes and model sources
 └── ../assets/source-models/   raw .glb models, grouped by kind
@@ -63,15 +61,13 @@ lunar-trace/
 - **Walking camera:** first-person walking at eye height, run, and a lunar **jump** (`ground/GroundCamera.ts`, `ground/groundControls.ts`).
 - **Apollo 17 rover** at Station 1 (a measured rover stop), drawn over the ground (`ground/actors/ActorLayer.ts`, `public/actors/lunar-roving-vehicle.glb`, shrunk from 31.6 MB to 1.45 MB; loaded only within 400 m). Its heading is a guess.
 - **Relict look:** Space Grotesk and DM Mono, the lime accent and glass panels (`ui/lunarTrace.css`), a "← Relict" link, our title, favicon and manifest.
-- **Parked:** the walk at the other Apollo sites (an illustrative surface) is in `moon-explorer/parked/illustrative-walk/`, out of the build.
 - **Fast travel list:** the bar's list is only the Apollo sites and Earthrise; the card pictures are renders of our own models (`public/thumbs/`, made by `dev/thumbs.html`). The timeline slider is off. A globe button finds the Earth.
 - **Light by default:** Battery quality preset, one pixel per CSS pixel unless `?dpr=`, no star field unless `?stars=1`.
-- **Parked, not deleted:** the walking astronaut with a lunar lope and foot dust, in `moon-explorer/parked/astronaut/` (its README says how to bring it back).
 
 ## What we removed or switched off
 
 - The loading screen, title splash and flyby (`LUNAR_TRACE_INTRO = false` in `main.ts`; the loading line is hidden), the first-visit hotspot hints, the date/time control, the "More" menu, the distance/altitude readout and the zoom tape.
-- Upstream's audit rig, CI workflows, contributor and security documents, lint config, and the analytics/telemetry credit. No telemetry is sent: no keys are configured, so its code never runs.
+- Upstream's audit rig, CI workflows, contributor and security documents, lint config, and the analytics/telemetry credit. No telemetry is sent: the Sentry and PostHog client (`src/telemetry/boot.ts`) and its two dependencies were removed; only the small event and config helpers remain, which nothing listens to.
 - The unused fonts (Jost, Share Tech Mono) and the SkyLumi branding in the page chrome.
 
 ## Credits we kept, and why
@@ -87,3 +83,7 @@ Removed credits are only those for things we no longer ship or use (analytics, t
 - `moon-explorer/` is **AGPL-3.0-only** (3D Moon plus our changes). If you serve the site, publish `moon-explorer/`'s source and put its address in the Credits panel's source link (`moon-explorer/src/ui/credits.ts`, the `open-source` row, which currently points to the upstream repository). The rest of Relict is a separate app in the same folder tree.
 - The **Lunar Roving Vehicle model**'s origin is not recorded; confirm its licence before publishing. The lunar module, Earth maps and panoramas are NASA media (credit requested).
 - Data licences are in `moon-explorer/DATA-LICENSES.md`.
+
+## Weak devices and browsers
+
+The main page checks the device (`lowEndDevice` in `src/main.ts`). With no WebGL2, Data Saver, a 2G/3G connection, 2 GB of memory or less, or 2 cores or fewer, it skips the live Moon and Mars frames: the still Earthrise stays behind the text, and "Explore Moon" / "View Mars" open their pages directly, loading only then. Add `?lite` to any URL to see this mode. On other devices the Mars frame and its models load only after the Moon has settled, so the two never compete for bandwidth.

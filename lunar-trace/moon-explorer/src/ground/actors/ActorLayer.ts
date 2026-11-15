@@ -8,7 +8,7 @@ import { trackGpu } from '../../quality/track'
 import { type Placement, attitudeQuat, fitPlacement, PLACEMENT_INVALID_Z } from '../lmPlacement'
 
 /**
- * The Apollo 17 Lunar Roving Vehicle (the walking astronaut is parked: see ../../../parked/astronaut), drawn over the ground pass the way the lunar module is: a three.js
+ * The Apollo 17 Lunar Roving Vehicle, drawn over the ground pass the way the lunar module is: a three.js
  * scene with its own camera, rendered after the ground pass so the ground's depth hides what is behind a rise. Frame metres are
  * (east, north, up); three's axes are (east, up, south).
  *

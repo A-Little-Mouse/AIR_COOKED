@@ -19,9 +19,16 @@
       <div class="type" id="cat"></div>
       <h2 id="name"></h2>
       <p class="desc" id="desc"></p>
+      <button class="play-video" id="play-info" type="button" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg> Play video</button>
       <div class="hint">drag to rotate · scroll to zoom</div>
     </section>
     <div id="status" class="status" hidden></div>
+    <div id="player" class="player" hidden role="dialog" aria-modal="true" aria-label="Spacecraft video">
+      <div class="player-box">
+        <div class="player-bar"><span id="player-title"></span><button id="player-close" type="button" aria-label="Close video">✕</button></div>
+        <video id="player-video" controls playsinline preload="none"></video>
+      </div>
+    </div>
     <script type="module" src="/src/gallery/gallery.ts"></script>
   </body>
 </html>

@@ -46,7 +46,7 @@ const NON_LITERAL: Record<string, string> = {
 
 /** Files allowed to mention window.__moonQuery (the Artifact preview's query carrier). Their reads then go through a scanned URLSearchParams. */
 // native/boot.ts and native/deepLink.ts write it (a launch link, filtered through viewQueryOnly to VIEW_QUERY_PARAMS, checked below).
-const MOON_QUERY_FILES = new Set(['main.ts', 'telemetry/boot.ts', 'telemetry/config.ts', 'moon/tiles/wanted.ts', 'moon/tiles/fades.ts', 'moon/tiles/focusPull.ts', 'ground/nearField.ts', 'native/boot.ts', 'native/deepLink.ts'])
+const MOON_QUERY_FILES = new Set(['main.ts', 'telemetry/config.ts', 'moon/tiles/wanted.ts', 'moon/tiles/fades.ts', 'moon/tiles/focusPull.ts', 'ground/nearField.ts', 'native/boot.ts', 'native/deepLink.ts'])
 
 const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => {
   const p = join(dir, n)

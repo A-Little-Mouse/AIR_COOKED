@@ -61,7 +61,7 @@ if (dotenv.length > 0) {
     assert.deepEqual(bad, [], 'a build with no env carries nothing of ours')
     const index = readFileSync(join(bare, 'index.html'), 'utf8')
     assert.ok(!index.includes('%MOON_'), 'every index.html placeholder is filled')
-    assert.match(index, /<title>Lunar Trace · The Moon<\/title>/)
+    assert.match(index, /<title>Relict · The Moon<\/title>/)
     // The launch head's local links (public/icons, public/manifest.webmanifest) are written absolute; the build must prefix the base (/moon/ here, /3d-moon/ for the website),
     // or they 404 when the app is served under a path. The bucket and the website both do.
     for (const h of ['/moon/icons/favicon-32.png', '/moon/icons/apple-touch-icon.png', '/moon/manifest.webmanifest']) assert.ok(index.includes(`href="${h}"`), `the build prefixes the base on ${h}`)

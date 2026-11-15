@@ -16,13 +16,7 @@ type Rate = [number, number]; // [value at J2000, change per Julian century]
 interface Elements { a: Rate; e: Rate; I: Rate; L: Rate; peri: Rate; node: Rate }
 
 const PLANETS: Record<string, Elements> = {
-  mercury: { a: [0.38709927, 0.00000037], e: [0.20563593, 0.00001906], I: [7.00497902, -0.00594749], L: [252.2503235, 149472.67411175], peri: [77.45779628, 0.16047689], node: [48.33076593, -0.12534081] },
-  venus: { a: [0.72333566, 0.0000039], e: [0.00677672, -0.00004107], I: [3.39467605, -0.0007889], L: [181.9790995, 58517.81538729], peri: [131.60246718, 0.00268329], node: [76.67984255, -0.27769418] },
-  earth: { a: [1.00000261, 0.00000562], e: [0.01671123, -0.00004392], I: [-0.00001531, -0.01294668], L: [100.46457166, 35999.37244981], peri: [102.93768193, 0.32327364], node: [0, 0] },
   mars: { a: [1.52371034, 0.00001847], e: [0.0933941, 0.00007882], I: [1.84969142, -0.00813131], L: [-4.55343205, 19140.30268499], peri: [-23.94362959, 0.44441088], node: [49.55953891, -0.29257343] },
-  jupiter: { a: [5.202887, -0.00011607], e: [0.04838624, -0.00013253], I: [1.30439695, -0.00183714], L: [34.39644051, 3034.74612775], peri: [14.72847983, 0.21252668], node: [100.47390909, 0.20469106] },
-  saturn: { a: [9.53667594, -0.0012506], e: [0.05386179, -0.00050991], I: [2.48599187, 0.00193609], L: [49.95424423, 1222.49362201], peri: [92.59887831, -0.41897216], node: [113.66242448, -0.28867794] },
-  neptune: { a: [30.06992276, 0.00026291], e: [0.00859048, 0.00005105], I: [1.77004347, 0.00035372], L: [-55.12002969, 218.45945325], peri: [44.96476227, -0.32241464], node: [131.78422574, -0.00508664] },
 };
 
 const MARS_MOONS: Record<string, { a: number; e: number; periodDays: number }> = {
@@ -66,13 +60,6 @@ function orbitOf(id: string, ms: number): Orbit | null {
     const peri = at(el.peri, T) * DEG;
     return { a: at(el.a, T) * AU_KM, e: at(el.e, T), I: at(el.I, T) * DEG, w: peri - node, node, M: at(el.L, T) * DEG - peri };
   }
-  if (id === 'moon') {
-    // Mean lunar elements (geocentric, referred to the ecliptic); good to a fraction of a degree.
-    const L = (218.3164477 + 481267.88123421 * T) * DEG;
-    const peri = (83.3532465 + 4069.0137287 * T) * DEG;
-    const node = (125.0445479 - 1934.1362891 * T) * DEG;
-    return { a: 384_400, e: 0.0549, I: 5.145 * DEG, w: peri - node, node, M: L - peri };
-  }
   return null;
 }
 
@@ -115,51 +102,21 @@ export function localPosition(def: BodyDef, ms: number, out: THREE.Vector3): THR
   return out.set(0, 0, 0);
 }
 
-/** Points along a body's orbit (relative to its parent), for drawing the orbit line. */
-export function orbitPoints(def: BodyDef, ms: number, n: number): THREE.Vector3[] {
-  const pts: THREE.Vector3[] = [];
-  const o = orbitOf(def.id, ms);
-  const m = MARS_MOONS[def.id];
-  if (!o && !m) return pts;
-  const basis = m ? equatorBasis(poleVector(BODY_BY_ID.get('mars')!)) : null;
-  for (let i = 0; i < n; i++) {
-    const E = (i / n) * Math.PI * 2;
-    if (o) {
-      pts.push(perifocalToScene(o.a * (Math.cos(E) - o.e), o.a * Math.sqrt(1 - o.e * o.e) * Math.sin(E), o.I, o.w, o.node, new THREE.Vector3()));
-    } else if (m && basis) {
-      const xp = m.a * (Math.cos(E) - m.e), yp = m.a * Math.sqrt(1 - m.e * m.e) * Math.sin(E);
-      pts.push(basis[0].clone().multiplyScalar(xp).addScaledVector(basis[1], yp));
-    }
-  }
-  return pts;
-}
-
-/** Spin angle about the body's pole, radians. Earth uses the sidereal angle (GMST); others spin from an arbitrary zero. */
+/** Spin angle about the body's pole, radians, from an arbitrary zero. */
 export function spinAngle(def: BodyDef, ms: number): number {
   const d = days(ms);
-  if (def.id === 'earth') return (((280.46061837 + 360.98564736629 * d) % 360) * DEG);
   const turns = (d * 24) / def.rotationHours;
   return (turns % 1) * Math.PI * 2;
 }
 
 const yAxis = new THREE.Vector3(0, 1, 0);
-const xAxis = new THREE.Vector3(1, 0, 0);
 const tmpQ = new THREE.Quaternion();
-const tmpA = new THREE.Vector3();
-const tmpT = new THREE.Vector3();
 
 /**
  * Orientation of a body's model (model +Y = north pole): align to the IAU pole, then spin.
- * The Moon is tidally locked: its model's 0 deg longitude (+X in the model) is turned to face Earth.
  */
 export function orientation(def: BodyDef, ms: number, out: THREE.Quaternion): THREE.Quaternion {
   out.setFromUnitVectors(yAxis, poleVector(def));
-  let spin = spinAngle(def, ms);
-  if (def.id === 'moon') {
-    const pole = poleVector(def);
-    tmpA.copy(xAxis).applyQuaternion(out); // where the prime meridian points with no spin
-    localPosition(def, ms, tmpT).negate().normalize(); // direction Moon -> Earth
-    spin = Math.atan2(pole.dot(tmpA.clone().cross(tmpT)), tmpA.dot(tmpT));
-  }
+  const spin = spinAngle(def, ms);
   return out.multiply(tmpQ.setFromAxisAngle(yAxis, spin));
 }

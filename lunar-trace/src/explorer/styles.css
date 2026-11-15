@@ -1,5 +1,4 @@
-/* Explorer UI: same design language as the title slide (Space Grotesk + DM Mono, lime accent, glass panels, pill buttons). */
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import '../fonts.css';
 
 :root {
   color-scheme: dark;
@@ -53,43 +52,18 @@ button { color: inherit; }
 .panel h1 { margin: 0 0 12px; font-size: 0.86rem; font-weight: 600; line-height: 1; letter-spacing: 0.14em; text-transform: uppercase; color: #fff; }
 .panel h2 { margin: 0; font-size: 1.7rem; font-weight: 600; line-height: 1; letter-spacing: -0.05em; }
 
-.back-link { display: inline-block; margin-bottom: 10px; font: 400 0.6rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s ease; }
-.back-link:hover { color: var(--accent); }
-
 /* --- body list --- */
-.top-left { top: 14px; left: 14px; width: 206px; max-height: calc(100% - 28px); display: flex; flex-direction: column; }
-.body-list input {
-  width: 100%; min-height: 36px; margin-bottom: 8px; padding: 0 14px; color: var(--text); user-select: text;
-  background: rgba(255, 255, 255, 0.035); border: 1px solid var(--line-strong); border-radius: 999px;
-  font: 500 0.67rem var(--mono); letter-spacing: 0.09em; text-transform: uppercase; outline: none; transition: border-color 0.2s ease;
-}
-.body-list input::placeholder { color: var(--faint); }
-.body-list input:focus { border-color: var(--accent); }
-.body-list ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; max-height: min(62vh, 340px); scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
-.body-list .item {
-  width: 100%; min-height: 34px; padding: 0 14px; display: flex; align-items: center; text-align: left;
-  color: #d8d9de; background: transparent; border: 1px solid transparent; border-radius: 22px; cursor: pointer;
-  font: 500 0.67rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
-  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-}
-.body-list .item.sub { padding-left: 28px; color: var(--muted); }
-.body-list .item:hover { color: var(--accent); border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.07); }
-.body-list .item.selected { color: var(--accent); border-color: rgba(var(--accent-rgb), 0.3); background: rgba(var(--accent-rgb), 0.08); }
-.body-list .empty { color: var(--faint); font: 0.62rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 14px; }
 
 /* --- info card --- */
 .info { left: 14px; bottom: 14px; width: min(360px, calc(100% - 28px)); padding: 18px 20px; user-select: text; }
 .info .type { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--accent); font: 500 0.66rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
 .info .type::before { content: ''; width: 31px; height: 1px; background: currentColor; }
-.info .desc { margin: 12px 0 16px; font-size: 0.9rem; line-height: 1.6; color: #c0c0c7; }
+
 .info dl { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; margin: 0; padding-top: 14px; border-top: 1px solid var(--line); }
 .info dt { color: var(--faint); font: 0.6rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; align-self: center; }
 .info dd { margin: 0; text-align: right; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
 
 /* --- layers / free-fly / controls --- */
-.top-right { top: 14px; right: 14px; display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
-.top-right label { display: flex; align-items: center; gap: 9px; cursor: pointer; font: 500 0.67rem var(--mono); letter-spacing: 0.09em; text-transform: uppercase; color: #d8d9de; }
-.top-right input { accent-color: var(--accent); width: 15px; height: 15px; }
 
 /* --- buttons: pill, mono, uppercase (like the title slide's ghost buttons) --- */
 .btn {
@@ -102,14 +76,8 @@ button { color: inherit; }
 .btn:disabled { opacity: 0.3; cursor: default; }
 .btn.active { color: var(--accent); border-color: rgba(var(--accent-rgb), 0.5); background: rgba(var(--accent-rgb), 0.1); }
 .btn.icon { min-width: 36px; padding: 0; font-size: 0.8rem; letter-spacing: 0; }
-.btn.primary { color: #0b0d0b; border-color: var(--accent); background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), var(--accent) 45%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 24px rgba(var(--accent-rgb), 0.16); }
-.btn.primary:hover:not(:disabled) { color: #0b0d0b; background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), var(--accent) 45%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 12px 30px rgba(var(--accent-rgb), 0.26); }
 
 /* --- time bar --- */
-.time-bar { left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
-.clock { min-width: 210px; padding: 0 8px; text-align: center; font-variant-numeric: tabular-nums; }
-.clock .date { font: 500 0.7rem var(--mono); letter-spacing: 0.06em; }
-.clock .rate { margin-top: 4px; font: 0.58rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
 
 /* --- help --- */
 .help { right: 14px; top: 190px; width: min(400px, calc(100% - 28px)); user-select: text; }
@@ -122,42 +90,27 @@ button { color: inherit; }
 .help p { margin: 12px 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--faint); }
 
 /* --- hint / toast / loading --- */
-.hint { position: absolute; left: 50%; bottom: 104px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line-strong); font: 500 0.67rem var(--mono); letter-spacing: 0.09em; text-transform: uppercase; color: #d8d9de; pointer-events: none; animation: pulse 2.4s ease-in-out infinite; backdrop-filter: blur(12px); }
-.hint svg { color: var(--accent); }
-.embed .hint { bottom: 24px; }
+
 @keyframes pulse { 50% { opacity: 0.55; } }
 
 .toast { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 28px); padding: 11px 20px; border-radius: 999px; background: var(--panel); border: 1px solid rgba(var(--accent-rgb), 0.5); font: 500 0.67rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); text-align: center; pointer-events: none; backdrop-filter: blur(12px); }
 
-.loading { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 18px; background: var(--bg); z-index: 5; }
-.loading-title { font: 500 0.7rem var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-.loading-bar { width: 240px; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
-.loading-bar span { display: block; height: 100%; background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.7); transition: width 0.2s; }
-
 @media (max-width: 720px) {
   /* phones: keep the scene visible, so panels shrink and the long description is dropped */
-  .top-left { width: 150px; padding: 10px; top: 10px; left: 10px; }
-  .body-list ul { max-height: 26vh; }
-  .body-list .item { min-height: 30px; padding: 0 10px; }
-  .body-list .item.sub { padding-left: 20px; }
-  .info { left: 10px; right: 10px; bottom: 76px; width: auto; padding: 12px 14px; }
-  .info .desc { display: none; }
-  .info .type { margin-bottom: 8px; }
-  .info h2 { font-size: 1.3rem; }
-  .info dl { margin-top: 10px; padding-top: 10px; gap: 4px 12px; }
-  .top-right { top: 10px; right: 10px; padding: 10px; gap: 8px; }
-  .top-right .btn { min-height: 32px; padding: 0 10px; }
-  .time-bar { bottom: 10px; max-width: calc(100% - 20px); }
-  .clock { min-width: 120px; padding: 0 4px; }
-  .hint { bottom: 150px; }
+
+.info { left: 10px; right: 10px; bottom: 76px; width: auto; padding: 12px 14px; }
+
+.info .type { margin-bottom: 8px; }
+.info h2 { font-size: 1.3rem; }
+.info dl { margin-top: 10px; padding-top: 10px; gap: 4px 12px; }
+
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+@media (prefers-reduced-motion: reduce) {*, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
 /* Ground view (Mars landers): a full-viewport scene over the explorer */
 .ground-view { position: fixed; inset: 0; z-index: 20; background: #000; }
 .ground-view canvas { width: 100%; height: 100%; display: block; }
-.ground-back { position: absolute; top: 16px; left: 16px; }
-.ground-caption { position: absolute; left: 16px; right: 16px; bottom: 16px; max-width: 34rem; padding: 12px 16px; }
+.ground-caption { position: absolute; left: 16px; top: 52px; max-width: min(34rem, calc(100% - 32px)); padding: 12px 16px; }
 .ground-caption p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
 
 /* No loading bar: the scene fades in once it is ready */
@@ -165,22 +118,31 @@ button { color: inherit; }
 .app.ready .viewport, .app.ready .labels { opacity: 1; }
 
 /* Mars explorer: the Moon page's chrome (bottom pill bar, credits line, back link) */
-.mars-back { text-decoration: none; position: fixed; top: 16px; left: 18px; z-index: 12; font: 500 .66rem var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.mars-back { text-decoration: none; position: fixed; top: 16px; left: 18px; z-index: 30; font: 500 .66rem var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
 .mars-back:hover { color: var(--accent); }
-.mars-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 12; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 24px); }
+.mars-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 24px); }
 .mars-bar button { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--line-strong); background: rgba(14, 15, 20, .82); backdrop-filter: blur(10px); color: var(--text); font: 500 .67rem var(--mono); letter-spacing: .09em; text-transform: uppercase; cursor: pointer; transition: border-color .15s, color .15s; }
 .mars-bar button:hover, .mars-bar button.active { border-color: var(--accent); color: var(--accent); }
-.mars-credit { position: fixed; left: 14px; bottom: 14px; z-index: 12; color: var(--faint); font: .66rem var(--mono); }
+.mars-credit { position: fixed; left: 14px; bottom: 14px; z-index: 30; color: var(--faint); font: .66rem var(--mono); }
 .mars-credit button { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: inherit; }
-.places { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 13; width: min(420px, calc(100% - 24px)); max-height: 60vh; overflow: auto; padding: 8px; }
+.places { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 31; width: min(420px, calc(100% - 24px)); max-height: 60vh; overflow: auto; padding: 8px; }
 .places ul { list-style: none; margin: 0; padding: 0; }
 .places button { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 0; border-radius: 10px; background: none; cursor: pointer; }
 .places button:hover, .places button.selected { background: rgba(var(--accent-rgb), .12); }
 .places strong { font: 500 .8rem var(--sans); }
 .places span { color: var(--muted); font: .64rem var(--mono); text-transform: uppercase; letter-spacing: .06em; }
-.credits { position: fixed; left: 14px; bottom: 44px; z-index: 13; max-width: 360px; padding: 14px 16px; font-size: .8rem; line-height: 1.5; color: var(--muted); }
+.credits { position: fixed; left: 14px; bottom: 44px; z-index: 31; max-width: 360px; padding: 14px 16px; font-size: .8rem; line-height: 1.5; color: var(--muted); }
 .credits p { margin: 0 0 8px; }
 .ground-caption .keys { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; }
 /* Held inside the home page (?bg=1): no controls, no input, like the Moon behind its headline */
 body.lt-bg .app { pointer-events: none; }
 body.lt-bg .mars-bar, body.lt-bg .mars-back, body.lt-bg .mars-credit, body.lt-bg .places, body.lt-bg .credits { display: none; }
+/* readable over the bright Mars ground */
+.mars-back, .mars-credit { text-shadow: 0 1px 8px rgba(0, 0, 0, .8); }
+.mars-back { color: var(--text); }
+.mars-credit { color: var(--muted); }
+/* The ground view fades in on arrival and out on leaving, instead of cutting */
+.ground-view { animation: ground-in .9s ease both; transition: opacity .5s ease; }
+.ground-view.leaving { opacity: 0; pointer-events: none; }
+@keyframes ground-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {.ground-view { animation: none; transition: none; } }

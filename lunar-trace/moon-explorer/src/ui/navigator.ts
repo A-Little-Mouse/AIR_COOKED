@@ -198,7 +198,6 @@ export function mountNavigator(root: HTMLElement, bar: BarApi, host: NavigatorHo
       img.loading = i < 3 ? 'eager' : 'lazy'
       img.addEventListener('error', () => { pic.classList.add('no-img'); img.remove() })
       pic.append(img)
-      if (e.steps.length > 1) pic.append(el('span', 'nav-views', `${e.steps.length} views`))
       b.append(pic, el('b', '', e.name), el('small', '', shortLine(e.id, e.caption)))
       b.addEventListener('click', () => { setOpen(false); go({ entry: i, step: 0 }) })
       col.append(b)

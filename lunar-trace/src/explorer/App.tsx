@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BODY_BY_ID } from '../solar/bodies.ts';
-import { bodiesOf, listOf, resolveStartId, worldFromSearch } from '../solar/world.ts';
-import { RATES, REAL_TIME_INDEX, SolarEngine, type Layers, type Snapshot } from './engine.ts';
-import BodyList from './components/BodyList';
-import InfoCard from './components/InfoCard';
-import TimeBar from './components/TimeBar';
-import HelpPanel from './components/HelpPanel';
+import { listOf, resolveStartId, worldFromSearch } from '../solar/world.ts';
+import { RATES, SolarEngine, type Layers } from './engine.ts';
 import GroundView from './components/GroundView';
 import { pickPhobosTime } from '../solar/marsTime.ts';
 import MarsBar from './components/MarsBar';
@@ -29,17 +25,12 @@ export default function App() {
   const embed = initial.embed;
   const world = useRef(worldFromSearch(window.location.search)).current;
 
-  const [progress, setProgress] = useState<[number, number]>([0, bodiesOf(world).length]);
   const [ready, setReady] = useState(false);
   const [selectedId, setSelectedId] = useState(initial.id);
-  const [freeFly, setFreeFly] = useState(false);
-  const [snap, setSnap] = useState<Snapshot | null>(null);
-  const [layers, setLayersState] = useState<Layers>({ orbits: true, labels: world === 'solar' });
-  const [paused, setPaused] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [hint, setHint] = useState(true);
+  const [layers, setLayersState] = useState<Layers>({ orbits: true, labels: false });
   const [toast, setToast] = useState<string | null>(null);
   const [groundId, setGroundId] = useState<string | null>(null);
+  const [groundLeaving, setGroundLeaving] = useState(false);
   // Inside the home page (?bg=1) the Mars system is held with no controls and driven by messages, as the Moon is; the page turns the controls on for "Explore Mars".
   const bgStart = useRef(new URLSearchParams(window.location.search).get('bg') === '1').current;
   const [bg, setBg] = useState(bgStart);
@@ -52,17 +43,13 @@ export default function App() {
         window.history.replaceState(null, '', `#/${id}${q ? `?${q}` : ''}`);
       },
       onFreeFly: (on) => {
-        setFreeFly(on);
         setToast(on ? 'Now in free fly camera mode. Press K again to exit this mode.' : null);
       },
-      onProgress: (d, t) => setProgress([d, t]),
       onReady: () => { setReady(true); if (bgStart) engineRef.current?.holdPhobosShot(true); if (window.parent !== window) window.parent.postMessage({ type: 'lt-ready' }, window.location.origin); },
-      onSnapshot: setSnap,
-      onInteract: () => setHint(false),
       onArrive: (id) => { if (world === 'mars' && BODY_BY_ID.get(id)?.craft?.kind === 'surface') setGroundId(id); },
     }, world);
     engineRef.current = engine;
-    engine.setLayers({ orbits: true, labels: world === 'solar' }); // the Mars world opens without labels, like the Moon page
+    engine.setLayers({ orbits: true, labels: false }); // the Mars world opens without labels, like the Moon page
     if (import.meta.env.DEV) (window as unknown as { __solar?: SolarEngine }).__solar = engine; // dev-only hook for tests
     engine.start(initial.id, initial.time ?? (world === 'mars' ? pickPhobosTime(Date.now()) : undefined), initial.rateIndex).catch((e) => console.error('Failed to start', e));
 
@@ -100,9 +87,6 @@ export default function App() {
 
   const travel = useCallback((id: string) => engineRef.current?.travelTo(id), []);
   const setLayers = (l: Layers) => { setLayersState(l); engineRef.current?.setLayers(l); };
-  const togglePause = () => { const p = !paused; setPaused(p); engineRef.current?.setPaused(p); };
-  const setRate = (i: number) => engineRef.current?.setRateIndex(i);
-  const goNow = () => { engineRef.current?.setTime(Date.now()); engineRef.current?.setRateIndex(REAL_TIME_INDEX); };
 
   // like the title slide: Mars and its moons switch the accent colour to orange
   useEffect(() => {
@@ -112,7 +96,13 @@ export default function App() {
   }, [selectedId]);
 
   const selected = BODY_BY_ID.get(selectedId)!;
-  const closeGround = useCallback(() => setGroundId(null), []);
+  /** Leave the ground view: it fades out first, then `then` runs (the camera flight starts behind the fade). */
+  const leaveGround = useCallback((then?: () => void) => {
+    if (!groundId) { then?.(); return; }
+    setGroundLeaving(true);
+    window.setTimeout(() => { setGroundId(null); setGroundLeaving(false); then?.(); }, 500);
+  }, [groundId]);
+  const closeGround = useCallback(() => leaveGround(), [leaveGround]);
   const groundDef = groundId ? BODY_BY_ID.get(groundId) ?? null : null;
   const canGround = world === 'mars' && selected.craft?.kind === 'surface';
   useEffect(() => {
@@ -127,45 +117,15 @@ export default function App() {
       <div ref={mountRef} className="viewport" />
       <div ref={labelsRef} className="labels" />
 
-      {ready && hint && world === 'solar' && !bg && (
-        <div className="hint">
-          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M9 11V5a1.5 1.5 0 0 1 3 0v5h.5V8.5a1.5 1.5 0 0 1 3 0V11h.5V9.5a1.5 1.5 0 0 1 3 0V16c0 3.5-2.5 6-6 6h-1.5c-2 0-3.2-.8-4.3-2.2L4 15.7a1.4 1.4 0 0 1 2.1-1.8L9 16.5z"/></svg>
-          <span>click &amp; drag to rotate</span>
-        </div>
-      )}
-
-      {groundDef && <GroundView def={groundDef} onClose={closeGround} />}
+      {groundDef && <GroundView def={groundDef} leaving={groundLeaving} onClose={closeGround} />}
 
       {toast && <div className="toast">{toast}</div>}
 
-      {!embed && !bg && ready && world === 'mars' && (
+      {!embed && !bg && ready && (
         <MarsBar
           places={listOf('mars')} selectedId={selectedId} labels={layers.labels}
-          onSelect={travel} onHome={goHome} onFullView={() => { setGroundId(null); engineRef.current?.home(); }} onLabels={(on) => setLayers({ ...layers, labels: on })}
+          onSelect={(id) => leaveGround(() => travel(id))} onHome={goHome} onFullView={() => leaveGround(() => engineRef.current?.home())} onLabels={(on) => setLayers({ ...layers, labels: on })}
         />
-      )}
-
-      {!embed && ready && world === 'solar' && (
-        <>
-          <header className="panel top-left">
-            <a className="back-link" href="/">← Relict</a>
-            <a className="back-link" href="/gallery.html" style={{ marginLeft: 14 }}>Spacecraft →</a>
-            <h1>Solar System</h1>
-            <BodyList bodies={listOf(world)} selectedId={selectedId} onSelect={travel} />
-          </header>
-          <InfoCard def={selected} snap={snap} />
-          <aside className="panel top-right">
-            <label><input type="checkbox" checked={layers.orbits} onChange={(e) => setLayers({ ...layers, orbits: e.target.checked })} /> Orbits</label>
-            <label><input type="checkbox" checked={layers.labels} onChange={(e) => setLayers({ ...layers, labels: e.target.checked })} /> Labels</label>
-            {canGround && <button className="btn" onClick={(e) => { setGroundId(selectedId); e.currentTarget.blur(); }} title="Ground view (G)">Ground view (G)</button>}
-            <button className={`btn${freeFly ? ' active' : ''}`} onClick={(e) => { engineRef.current?.toggleFreeFly(); e.currentTarget.blur(); }} title="Free-fly camera (K)">
-              Free fly {freeFly ? 'on' : 'off'}
-            </button>
-            <button className="btn" onClick={(e) => { setHelpOpen(!helpOpen); e.currentTarget.blur(); }}>Controls</button>
-          </aside>
-          <TimeBar snap={snap} paused={paused} onPause={togglePause} onRate={setRate} onNow={goNow} />
-          {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
-        </>
       )}
     </main>
   );

@@ -24,17 +24,15 @@ test('viking 2 is at Utopia Planitia', () => {
 test('resolveStartId falls back to mars for unknown or non-mars ids', () => {
   for (const id of ['earth', 'sun', null, 'nope']) assert.equal(resolveStartId('mars', id), 'mars');
   assert.equal(resolveStartId('mars', 'viking-1'), 'viking-1');
-  assert.equal(resolveStartId('solar', 'sun'), 'sun');
 });
 
 test('worldFromSearch', () => {
   assert.equal(worldFromSearch('?world=mars'), 'mars');
-  assert.equal(worldFromSearch(''), 'solar');
-  assert.equal(worldFromSearch('?world=venus'), 'solar');
+  assert.equal(worldFromSearch(''), 'mars'); // the explorer is the Mars system only
+  assert.equal(worldFromSearch('?world=venus'), 'mars');
 });
 
 test('the Sun is drawn in the mars world but is not one of its bodies or list entries', () => {
   assert.deepEqual(lightOnlyOf('mars').map((b) => b.id), ['sun']);
-  assert.deepEqual(lightOnlyOf('solar'), []);
   assert.ok(!bodiesOf('mars').some((b) => b.id === 'sun') && !listOf('mars').some((b) => b.id === 'sun'));
 });

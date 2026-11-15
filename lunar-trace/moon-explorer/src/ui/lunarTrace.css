@@ -74,7 +74,7 @@ html, body, button, input, select, textarea { font-family: var(--lt-sans); }
 .bar button .lbl, .bar .nav-list::after {
   display: inline; font: 500 0.64rem/1 var(--lt-mono); letter-spacing: 0.14em; text-transform: uppercase; color: inherit;
 }
-.bar .nav-list, .bar [data-bar='home'], .bar [data-bar='labels'], .bar [data-bar='story'] { padding: 0 18px 0 14px; }
+.bar .nav-list, .bar [data-bar='home'], .bar [data-bar='labels'] { padding: 0 18px 0 14px; }
 .bar .nav-list::after { content: 'Places'; }
 .bar [data-bar='home'] { margin-left: 14px; }
 .bar button:hover:not(:disabled) .lbl, .bar .nav-list:hover::after { color: inherit; }
@@ -101,13 +101,3 @@ html, body, button, input, select, textarea { font-family: var(--lt-sans); }
 /* ...and it stays on screen, like the Mars page's line, instead of fading with the brand. */
 #credit[data-brand='out'] .brand-text, #credit[data-brand='out'] .credit-link { opacity: 0.55 !important; }
 #credit[data-brand='out'] .credit-link { pointer-events: auto; }
-
-/* The Apollo 17 story: captions over the picture, controls under them. */
-#lt-story { position: fixed; left: 50%; top: 11vh; transform: translateX(-50%); z-index: 30; width: min(560px, calc(100vw - 32px)); padding: 18px 22px; border: 1px solid var(--lt-line, rgba(255,255,255,.16)); border-radius: 18px; background: var(--lt-panel); backdrop-filter: blur(10px); color: #fff; text-align: center; }
-#lt-story[hidden] { display: none; }
-#lt-story .lt-story-step { font: 500 0.62rem/1 var(--lt-mono); letter-spacing: .16em; opacity: .55; }
-#lt-story .lt-story-title { margin: 8px 0 6px; font-size: 1.25rem; font-weight: 600; }
-#lt-story .lt-story-text { margin: 0 0 14px; line-height: 1.5; font-size: .95rem; opacity: .9; }
-#lt-story .lt-story-row { display: flex; gap: 8px; justify-content: center; }
-#lt-story button { height: 34px; padding: 0 16px; border-radius: 17px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.06); color: #fff; font: 500 0.64rem/1 var(--lt-mono); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
-#lt-story button:hover { background: rgba(255,255,255,.14); }

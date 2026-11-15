@@ -4,8 +4,8 @@ import { createGLTFLoader } from '../../solar/gltf.ts';
 import type { BodyDef } from '../../solar/bodies.ts';
 import { MarsSurfaceScene } from '../../solar/marsSurface.ts';
 
-/** An illustrative ground scene for a Mars lander, over the explorer. Esc or the button goes back to orbit. */
-export default function GroundView({ def, onClose }: { def: BodyDef; onClose: () => void }) {
+/** An illustrative ground scene for a Mars lander, over the explorer. The page's bar (Places, Home, Full view, Labels) stays on top; Full view or Esc goes back to orbit. */
+export default function GroundView({ def, leaving, onClose }: { def: BodyDef; leaving: boolean; onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -71,13 +71,12 @@ export default function GroundView({ def, onClose }: { def: BodyDef; onClose: ()
 
   const site = def.facts?.find(([k]) => k === 'Site')?.[1];
   return (
-    <div className="ground-view">
+    <div className={`ground-view${leaving ? ' leaving' : ''}`}>
       <canvas ref={canvasRef} />
-      <button className="btn ground-back" onClick={onClose}>← Back to orbit</button>
       <div className="panel ground-caption">
         <strong>{def.name}</strong>{site ? ` · ${site}` : ''}
         <p>Landing site is real. Terrain, rocks and the lander's heading are illustrative.</p>
-        <p className="keys">W A S D walk · Shift run · Space jump · drag to look · Esc back to orbit</p>
+        <p className="keys">W A S D walk · Shift run · Space jump · drag to look · Full view or Esc for orbit</p>
       </div>
     </div>
   );

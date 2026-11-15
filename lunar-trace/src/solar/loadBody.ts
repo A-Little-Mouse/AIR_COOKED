@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { BodyDef } from './bodies.ts';
+import { dimBrightModel } from './dim.ts';
 
 export interface LoadedModel {
   /** Model centred on the origin and scaled to UNIT radius (+Y = north pole). */
@@ -40,11 +41,10 @@ export async function loadBody(def: BodyDef, loader: GLTFLoader): Promise<Loaded
     old.dispose();
   });
 
-  // Normalize: measure just def.sizeFrom if given (so rings don't shrink the planet), centre, scale to unit radius.
-  // (GLTFLoader strips '.' and similar from node names, e.g. 'Saturn.001' -> 'Saturn001')
-  const sizer = (def.sizeFrom && model.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(def.sizeFrom))) || model;
-  if (def.sizeFrom && sizer === model) console.warn(`sizeFrom mesh "${def.sizeFrom}" not found in ${def.model}; sizing from the whole model`);
-  const box = new THREE.Box3().setFromObject(sizer);
+  if (isCraft) dimBrightModel(model); // white craft are dimmed so they do not glare against the dark scene
+
+  // Normalize: centre and scale to unit radius.
+  const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
   const wrapper = new THREE.Group();

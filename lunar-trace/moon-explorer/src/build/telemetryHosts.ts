@@ -1,6 +1,6 @@
 /**
  * The telemetry hosts a build talks to, derived from its keys. A leaf with no imports: vite.config.ts reads it through indexHtml.ts at build
- * time, and telemetry/boot.ts takes the PostHog default from here (src/telemetry itself stays lazy-only, scripts/telemetry.test.mts).
+ * time (the telemetry client itself, src/telemetry/boot.ts, was removed: this build sends nothing).
  */
 
 /** PostHog's US ingest host, used when a build has a PostHog key and no VITE_POSTHOG_HOST. */

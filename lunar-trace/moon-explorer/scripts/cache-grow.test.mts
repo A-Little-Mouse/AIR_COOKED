@@ -169,6 +169,4 @@ test('?cachegrow=0 turns it off; the switch is registered; main wires the poll, 
   assert.ok(!/releaseTiles|ensureTiles|TS\.create/.test(fn), 'no rebuild during a session')
   assert.match(main, /cacheGrow: \(\) => \(\{ on: cacheGrowOn/)
   assert.match(main, /layers = growLayers\(layers, maxLayers\)\n\s+if \(memShedTileCap !== null\)/, 'the shed cap still wins over the grown size')
-  const boot = readFileSync(new URL('../src/telemetry/boot.ts', import.meta.url), 'utf8')
-  assert.match(boot, /cacheProps\(c\.size, c\.start, c\.lastShrink\)/)
 })

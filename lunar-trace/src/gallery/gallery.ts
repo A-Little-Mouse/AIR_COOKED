@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createGLTFLoader } from '../solar/gltf.ts';
+import { dimBrightModel } from '../solar/dim.ts';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { CATEGORY_LABEL, CRAFT, type Craft, type CraftCategory } from './catalog.ts';
 
@@ -10,11 +10,14 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const stage = $('stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // a white craft rolls off to light grey instead of clipping to flat white
+renderer.toneMappingExposure = 0.8;
 stage.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
-const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+scene.environmentIntensity = 0.55;
+const sun = new THREE.DirectionalLight(0xffffff, 1.9);
 sun.position.set(4, 6, 5);
 scene.add(sun, new THREE.AmbientLight(0xffffff, 0.15));
 
@@ -70,6 +73,9 @@ async function show(craft: Craft) {
   $('name').textContent = craft.name;
   $('cat').textContent = CATEGORY_LABEL[craft.category];
   $('desc').textContent = craft.info;
+  const playInfo = $<HTMLButtonElement>('play-info');
+  playInfo.hidden = !craft.video;
+  playInfo.onclick = () => openVideo(craft);
   history.replaceState(null, '', `#/${craft.id}`);
   const status = $('status');
   status.textContent = 'Loading…';
@@ -81,6 +87,8 @@ async function show(craft: Craft) {
     if (my !== token) return dispose(gltf.scene);
     if (current) { scene.remove(current); dispose(current); }
     current = gltf.scene;
+    const dimmed = dimBrightModel(current); // too bright or white: softened
+    if (import.meta.env.DEV) console.debug(`[dim] ${craft.id} ${dimmed.toFixed(2)}`);
     scene.add(current);
     frame(current);
     status.hidden = true;
@@ -97,14 +105,47 @@ for (const cat of Object.keys(CATEGORY_LABEL) as CraftCategory[]) {
   h.textContent = CATEGORY_LABEL[cat];
   list.appendChild(h);
   for (const craft of CRAFT.filter((x) => x.category === cat)) {
+    const row = document.createElement('div');
+    row.className = 'craft-row';
     const b = document.createElement('button');
     b.className = 'craft';
     b.dataset.id = craft.id;
     b.textContent = craft.name;
     b.addEventListener('click', () => show(craft));
-    list.appendChild(b);
+    row.appendChild(b);
+    if (craft.video) { // a play button on the craft that have a video
+      const play = document.createElement('button');
+      play.className = 'play';
+      play.type = 'button';
+      play.title = `Play video: ${craft.name}`;
+      play.setAttribute('aria-label', `Play video: ${craft.name}`);
+      play.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+      play.addEventListener('click', () => { if (current === null || document.querySelector<HTMLElement>('.craft.selected')?.dataset.id !== craft.id) void show(craft); openVideo(craft); });
+      row.appendChild(play);
+    }
+    list.appendChild(row);
   }
 }
+
+// video player: opens over the page; Esc, the cross or a click outside closes it (and stops the video)
+const player = $('player'), video = $<HTMLVideoElement>('player-video');
+function openVideo(craft: Craft) {
+  if (!craft.video) return;
+  $('player-title').textContent = craft.name;
+  video.src = craft.video;
+  player.hidden = false;
+  video.play().catch(() => undefined); // if the browser blocks autoplay the controls are there
+  $<HTMLButtonElement>('player-close').focus();
+}
+function closeVideo() {
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+  player.hidden = true;
+}
+$('player-close').addEventListener('click', closeVideo);
+player.addEventListener('click', (e) => { if (e.target === player) closeVideo(); });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !player.hidden) closeVideo(); });
 
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 void show(CRAFT.find((c) => `#/${c.id}` === location.hash) ?? CRAFT[0]);

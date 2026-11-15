@@ -7,6 +7,8 @@ export interface Craft {
   /** Public URL of the .glb. */
   model: string;
   info: string;
+  /** Public URL of a video about this craft, if there is one (public/videos). */
+  video?: string;
 }
 
 export const CATEGORY_LABEL: Record<CraftCategory, string> = {
@@ -15,14 +17,21 @@ export const CATEGORY_LABEL: Record<CraftCategory, string> = {
   satellites: 'Earth & Sun satellites',
 };
 
+/** Craft that have a video (public/videos, copied from the project's videos folder). */
+const VIDEOS: Record<string, string> = {
+  'apollo-lunar-module': '/videos/apollo-lunar-module.mp4',
+  'spirit-opportunity-rover': '/videos/spirit-opportunity-rover.mp4',
+  kepler: '/videos/kepler.mp4',
+};
+
 const c = (category: CraftCategory, id: string, name: string, info: string, model = `/models/craft/${category}/${id}.glb`): Craft =>
-  ({ id, name, category, model, info });
+  ({ id, name, category, model, info, video: VIDEOS[id] });
 
 /** Every craft model from assets/source-models that is not a planet or moon. */
 export const CRAFT: Craft[] = [
-  c('landers-rovers', 'apollo-lunar-module', 'Apollo Lunar Module', 'The two-stage craft that carried Apollo astronauts from lunar orbit to the surface and back. Its descent stage was left on the Moon.', '/models/apollo-lunar-module.glb'),
+  c('landers-rovers', 'apollo-lunar-module', 'Apollo Lunar Module', 'The two-stage craft that carried Apollo astronauts from lunar orbit to the surface and back. Its descent stage was left on the Moon.', '/models/craft/landers-rovers/apollo-lunar-module.glb'),
   c('landers-rovers', 'lunar-roving-vehicle', 'Lunar Roving Vehicle', 'The battery-powered rover driven by astronauts on Apollo 15, 16 and 17. All three were left parked on the Moon.'),
-  c('landers-rovers', 'viking-lander', 'Viking Lander', 'Viking 1 and 2 touched down on Mars in 1976 and returned the first pictures from the surface, plus soil experiments.', '/models/viking-lander.glb'),
+  c('landers-rovers', 'viking-lander', 'Viking Lander', 'Viking 1 and 2 touched down on Mars in 1976 and returned the first pictures from the surface, plus soil experiments.', '/models/craft/landers-rovers/viking-lander.glb'),
   c('landers-rovers', 'sojourner-rover', 'Sojourner Rover', 'The small rover of the 1997 Mars Pathfinder mission, the first wheeled vehicle to operate on Mars.'),
   c('landers-rovers', 'spirit-opportunity-rover', 'Spirit & Opportunity', 'The twin Mars Exploration Rovers that landed in January 2004 and found evidence that liquid water once shaped Mars.'),
   c('landers-rovers', 'insight-lander', 'InSight Lander', 'Landed on Mars in 2018 to listen for marsquakes and measure the planet\'s interior. The mission ended in December 2022.'),

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 const src = readFileSync('src/intro/splash.ts', 'utf8')
-assert.match(src, /splash-title">Lunar Trace<\/h1>/, 'the splash names Lunar Trace')
+assert.match(src, /splash-title">Relict<\/h1>/, 'the splash names Relict')
 assert.match(src, /textContent = 'The Moon, in high resolution'/, 'the splash has one sentence of subtext')
 assert.doesNotMatch(src, /PRODUCT_NAME|Real terrain · Real Sun/, 'the splash does not use the product name or old tagline')
 const m = /export class SmoothLine \{[\s\S]*?\n\}\n/.exec(src)

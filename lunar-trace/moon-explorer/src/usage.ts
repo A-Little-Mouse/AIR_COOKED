@@ -1,6 +1,6 @@
 /**
  * Usage events: the one-line hook the viewer calls where an action is already handled. It only dispatches a window event (`moon:usage`);
- * src/telemetry/boot.ts listens for it after the first frame and, when telemetry is on, builds the payload with the fixed builders in
+ * The telemetry client that listened for it (removed: this build sends nothing) built the payload with the fixed builders in
  * src/telemetry/events.ts. With telemetry off nobody listens and the call costs one event dispatch. Nothing here imports src/telemetry
  * (scripts/telemetry.test.mts: no static import) and nothing here carries free text: the name and a few short enum values.
  */

@@ -1,37 +1,37 @@
-import { ALL_BODIES, BODIES, BODY_BY_ID, type BodyDef } from './bodies.ts';
+import { BODY_BY_ID, type BodyDef } from './bodies.ts';
 import { CRAFT_BODIES } from './craft.ts';
 
-/** Which set of bodies an explorer page shows: the whole solar system, or only Mars and its moons with the landers on it. */
-export type WorldId = 'solar' | 'mars';
+/** The explorer shows one system: Mars and its two moons, with the landers and rovers on it. (The solar-system world and its planet models were removed.) */
+export type WorldId = 'mars';
 
 const MARS_BODY_IDS = ['mars', 'phobos', 'deimos'];
 const MARS_CRAFT_IDS = ['viking-1', 'viking-2', 'sojourner', 'spirit', 'opportunity', 'insight', 'ingenuity'];
 
-export function worldFromSearch(search: string): WorldId {
-  return new URLSearchParams(search).get('world') === 'mars' ? 'mars' : 'solar';
+export function worldFromSearch(_search: string): WorldId {
+  return 'mars';
 }
 
-/** The bodies the engine loads (the Sun is not one of them in the Mars world). */
-export function bodiesOf(world: WorldId): BodyDef[] {
-  return world === 'mars' ? MARS_BODY_IDS.map((id) => BODY_BY_ID.get(id)!) : BODIES;
+/** The bodies the engine loads (the Sun is not one of them: it is drawn as light only). */
+export function bodiesOf(_world: WorldId): BodyDef[] {
+  return MARS_BODY_IDS.map((id) => BODY_BY_ID.get(id)!);
 }
 
-export function craftOf(world: WorldId): BodyDef[] {
-  return world === 'mars' ? MARS_CRAFT_IDS.map((id) => CRAFT_BODIES.find((c) => c.id === id)!) : CRAFT_BODIES;
+export function craftOf(_world: WorldId): BodyDef[] {
+  return MARS_CRAFT_IDS.map((id) => CRAFT_BODIES.find((c) => c.id === id)!);
 }
 
 /** List order: Mars, its landers, then its moons. */
 export function listOf(world: WorldId): BodyDef[] {
-  if (world !== 'mars') return ALL_BODIES;
-  const [mars, ...moons] = bodiesOf('mars');
-  return [mars, ...craftOf('mars'), ...moons];
+  const [mars, ...moons] = bodiesOf(world);
+  return [mars, ...craftOf(world), ...moons];
 }
 
 export function resolveStartId(world: WorldId, hashId: string | null): string {
-  return hashId && listOf(world).some((b) => b.id === hashId) ? hashId : world === 'mars' ? 'mars' : 'sun';
+  return hashId && listOf(world).some((b) => b.id === hashId) ? hashId : 'mars';
 }
 
-/** Bodies that are drawn and light the scene but are not listed, labelled or clickable: the Sun in the Mars world. */
-export function lightOnlyOf(world: WorldId): BodyDef[] {
-  return world === 'mars' ? [BODY_BY_ID.get('sun')!] : [];
+/** Bodies that are drawn and light the scene but are not listed, labelled or clickable: the Sun. */
+export function lightOnlyOf(_world: WorldId): BodyDef[] {
+  return [BODY_BY_ID.get('sun')!];
 }
+

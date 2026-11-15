@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createGLTFLoader } from '../solar/gltf.ts';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -7,8 +6,8 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { BodyDef } from '../solar/bodies.ts';
 import { bodiesOf, craftOf, lightOnlyOf, type WorldId } from '../solar/world.ts';
-import { J2000_MS, localPosition, orbitPoints, orientation, poleVector } from '../solar/ephemeris.ts';
-import { orbitLinePoints, placeL1, placeOrbiter, surfaceDirection } from '../solar/craft.ts';
+import { localPosition, orientation, poleVector } from '../solar/ephemeris.ts';
+import { surfaceDirection } from '../solar/craft.ts';
 import { PHOBOS_CAMERA_KM, PHOBOS_OFFSET_DEG, phobosFrame, type PhobosFrame } from '../solar/marsTime.ts';
 import { loadBody, makeGlow } from '../solar/loadBody.ts';
 
@@ -22,24 +21,10 @@ export const RATES: Array<{ value: number; label: string }> = [
 export const REAL_TIME_INDEX = 7;
 
 export interface Layers { orbits: boolean; labels: boolean }
-export interface Snapshot {
-  timeMs: number;
-  rateIndex: number;
-  paused: boolean;
-  selectedId: string;
-  freeFly: boolean;
-  /** Selected body's distance from the Sun, km. */
-  distFromSunKm: number;
-  /** Camera height above the selected body's surface, km. */
-  altitudeKm: number;
-}
 export interface Callbacks {
   onSelect: (id: string) => void;
   onFreeFly: (on: boolean) => void;
-  onProgress: (done: number, total: number) => void;
   onReady: () => void;
-  onSnapshot: (s: Snapshot) => void;
-  onInteract: () => void;
   /** A flight to a body has finished. */
   onArrive?: (id: string) => void;
 }
@@ -65,6 +50,8 @@ const SPEED_KEY = 0.01; // rad per frame
 const SPEED_ZOOM = 0.05; // log2 per frame
 const SMOOTH = 0.8; // Eyes: per-frame smoothing (at 60 fps)
 const SUN_LIGHT = 3.6; // ~pi: a fully sunlit white surface renders at its albedo; same at every distance, like Eyes
+/** Quintic smootherstep: eases in and out with no jolt at either end (the Mars world's flights). */
+const glide = (k: number) => k * k * k * (k * (k * 6 - 15) + 10);
 const ease = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 const lerpTo = (target: number, prev: number, f: number) => target + (prev - target) * f; // Eyes' lerp(o, smoothed, 0.8)
 
@@ -136,6 +123,7 @@ export class SolarEngine {
   private flight: Flight | null = null;
   /** The Mars page's held shot (camera off Phobos): blends from where the camera was to the shot, then follows Phobos along its orbit. */
   private hold: { p0: THREE.Vector3; q0: THREE.Quaternion; t: number; dur: number } | null = null;
+  private holdPos = new THREE.Vector3();
   private holdFrame: PhobosFrame = { e1: new THREE.Vector3(), e2: new THREE.Vector3(), e3: new THREE.Vector3() };
   /** Sideways framing: the picture is shifted right by this share of its width (so the planet stands clear of the text); eases to its target. */
   private shift = 0;
@@ -148,7 +136,6 @@ export class SolarEngine {
   private dragging = false;
   private down = { x: 0, y: 0, t: 0 };
   private keys = new Set<string>();
-  private lastSnapshot = 0;
 
   private raycaster = new THREE.Raycaster();
   private tmp = new THREE.Vector3();
@@ -158,7 +145,7 @@ export class SolarEngine {
   private canvas: HTMLCanvasElement;
   private cleanups: Array<() => void> = [];
 
-  constructor(private mount: HTMLElement, private labelLayer: HTMLElement, private cb: Callbacks, private world: WorldId = 'solar') {
+  constructor(private mount: HTMLElement, private labelLayer: HTMLElement, private cb: Callbacks, private world: WorldId = 'mars') {
     // Log depth: one scene spans metres (Phobos) to ~10^10 km (Neptune's orbit and beyond).
     this.renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -191,13 +178,10 @@ export class SolarEngine {
     if (timeMs !== undefined) this.timeMs = timeMs;
     if (rateIndex !== undefined) this.rateIndex = rateIndex;
     const loader = this.loader;
-    let done = 0;
     const BODIES = bodiesOf(this.world), CRAFT_BODIES = craftOf(this.world);
-    this.cb.onProgress(0, BODIES.length);
     const loaded = await Promise.all(
       [...BODIES, ...lightOnlyOf(this.world)].map(async (def) => {
         const m = await loadBody(def, loader);
-        this.cb.onProgress(++done, BODIES.length);
         return { def, wrapper: m.wrapper };
       }),
     );
@@ -221,14 +205,7 @@ export class SolarEngine {
       const pick = new THREE.Mesh(pickGeo, pickMat); // invisible click target, enlarged with distance
       anchor.add(pick);
 
-      let line: THREE.LineLoop | null = null;
-      if (def.type !== 'star' && this.world === 'solar') { // the Mars world has no orbit lines
-        const pts = orbitPoints(def, this.timeMs, def.type === 'moon' ? 360 : 4096);
-        line = new THREE.LineLoop(
-          new THREE.BufferGeometry().setFromPoints(pts),
-          new THREE.LineBasicMaterial({ color: def.type === 'moon' ? 0x9a8cff : 0x5b86c9, transparent: true, opacity: 0.55 }),
-        );
-      }
+      const line: THREE.LineLoop | null = null; // no orbit lines in the Mars system
 
       const label = document.createElement('button');
       label.className = 'body-label';
@@ -303,15 +280,6 @@ export class SolarEngine {
       anchor.position.copy(n).multiplyScalar(parent.def.radiusKm + def.radiusKm * 0.35);
       anchor.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n);
       (parent.anchor.userData.pivot as THREE.Group).add(anchor);
-    } else {
-      parent.anchor.add(anchor);
-      if (site.kind === 'orbit') {
-        line = new THREE.LineLoop(
-          new THREE.BufferGeometry().setFromPoints(orbitLinePoints(site)),
-          new THREE.LineBasicMaterial({ color: 0x5fd8b0, transparent: true, opacity: 0.5 }),
-        );
-        parent.anchor.add(line);
-      }
     }
 
     const label = document.createElement('button');
@@ -370,7 +338,7 @@ export class SolarEngine {
     this.flight = null;
     if (this.mode === 'freefly') { this.mode = 'orbit'; this.cb.onFreeFly(false); }
     this.target = this.byId.get('mars')!;
-    this.hold = { p0: this.camera.position.clone(), q0: this.camera.quaternion.clone(), t: instant ? 99 : 0, dur: 2.2 };
+    this.hold = { p0: this.camera.position.clone(), q0: this.camera.quaternion.clone(), t: instant ? 99 : 0, dur: 3.2 };
     this.setShift(0.13, instant);
   }
 
@@ -382,7 +350,7 @@ export class SolarEngine {
 
   private updateShift(dt: number): void {
     if (Math.abs(this.shift - this.shiftTarget) < 1e-4) { if (this.shift !== this.shiftTarget) { this.shift = this.shiftTarget; this.applyShift(); } return; }
-    this.shift += (this.shiftTarget - this.shift) * Math.min(1, dt * 2.5);
+    this.shift += (this.shiftTarget - this.shift) * Math.min(1, dt * 1.8);
     this.applyShift();
   }
 
@@ -395,10 +363,10 @@ export class SolarEngine {
   private updateHold(dt: number): void {
     const hd = this.hold!;
     hd.t += dt;
-    const k = ease(Math.min(1, hd.t / hd.dur));
-    const pos = this.tmp, q = this.tmpQ;
+    const k = glide(Math.min(1, hd.t / hd.dur));
+    const pos = this.holdPos, q = this.tmpQ;
     this.holdPose(pos, q);
-    this.camera.position.lerpVectors(hd.p0, pos, k);
+    this.arc(this.byId.get('mars')!.world, hd.p0, pos, k, this.camera.position);
     this.camera.quaternion.slerpQuaternions(hd.q0, q, k);
   }
 
@@ -463,10 +431,6 @@ export class SolarEngine {
       const tang = dir.clone().addScaledVector(up, -dir.dot(up));
       if (tang.lengthSq() < 1e-6) tang.crossVectors(up, new THREE.Vector3(0, 1, 0));
       dir.copy(up).multiplyScalar(0.8).addScaledVector(tang.normalize(), 0.6);
-    } else if (b.def.ringed) {
-      // Lift the camera off the ring plane, onto the side the Sun is shining on, so the rings are lit and open.
-      const pole = poleVector(b.def);
-      dir.addScaledVector(pole, (dir.dot(pole) >= 0 ? 1 : -1) * 0.5);
     } else {
       if (!(this.world === 'mars' && id === 'mars')) dir.y += 0.25; // Mars: straight down the Sun line, so the face in view is fully lit
     }
@@ -479,7 +443,8 @@ export class SolarEngine {
       return;
     }
     const dest = b.world.clone().add(offset);
-    const dur = THREE.MathUtils.clamp(0.5 + 0.35 * Math.log10(Math.max(this.camera.position.distanceTo(dest), 1)), 0.75, 4);
+    const base = 0.5 + 0.35 * Math.log10(Math.max(this.camera.position.distanceTo(dest), 1));
+    const dur = this.world === 'mars' ? THREE.MathUtils.clamp(base * 1.6, 1.8, 5) : THREE.MathUtils.clamp(base, 0.75, 4); // the Mars world takes its time, like the Moon's flights
     this.flight = { target: b, t: 0, dur, p0: this.camera.position.clone(), q0: this.camera.quaternion.clone(), offset };
   }
 
@@ -511,7 +476,6 @@ export class SolarEngine {
       this.down = { x: e.clientX, y: e.clientY, t: performance.now() };
       this.canvas.setPointerCapture(e.pointerId);
       this.canvas.style.cursor = 'grabbing';
-      this.cb.onInteract();
     });
     on(this.canvas, 'pointermove', (e) => {
       if (this.dragging) { this.dragX += e.movementX; this.dragY += e.movementY; return; }
@@ -533,7 +497,6 @@ export class SolarEngine {
       e.preventDefault();
       const px = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 600 : e.deltaY;
       this.zoomOffset += 0.1 * px;
-      this.cb.onInteract();
     }, { passive: false });
 
     onWin('keydown', (e) => {
@@ -543,7 +506,6 @@ export class SolarEngine {
       const k = e.key.toLowerCase();
       if (k === 'k' && !e.repeat) this.toggleFreeFly();
       this.keys.add(k);
-      if ('wasdqezcx'.includes(k) && k.length === 1) this.cb.onInteract();
     });
     onWin('keyup', (e) => { this.keys.delete(e.key.toLowerCase()); });
     onWin('blur', () => { this.keys.clear(); this.dragging = false; });
@@ -579,29 +541,12 @@ export class SolarEngine {
     this.dragX = this.dragY = this.zoomOffset = 0;
     this.updateOverlays();
     this.composer.render();
-    const now = performance.now();
-    if (now - this.lastSnapshot > 250) {
-      this.lastSnapshot = now;
-      this.cb.onSnapshot(this.snapshot());
-    }
   };
-
-  private snapshot(): Snapshot {
-    const t = this.target;
-    return {
-      timeMs: this.timeMs, rateIndex: this.rateIndex, paused: this.paused, selectedId: t.def.id, freeFly: this.mode === 'freefly',
-      distFromSunKm: t.world.length(), altitudeKm: Math.max(0, this.camera.position.distanceTo(t.world) - t.def.radiusKm),
-    };
-  }
 
   private updateBodies(): void {
     for (const b of this.bodies) {
       const c = b.def.craft;
-      if (c) { // spacecraft: landers are fixed to their parent's surface; satellites and ACE are placed analytically
-        if (c.kind === 'orbit') placeOrbiter(c, this.timeMs, J2000_MS, b.anchor.position, b.anchor.quaternion);
-        else if (c.kind === 'l1') placeL1(c, this.byId.get(b.def.parent!)!.anchor.position, b.anchor.position);
-        continue;
-      }
+      if (c) continue; // landers are fixed to their parent's surface
       localPosition(b.def, this.timeMs, b.anchor.position);
       (b.anchor.userData.pivot as THREE.Group).quaternion.copy(orientation(b.def, this.timeMs, this.tmpQ));
     }
@@ -718,12 +663,31 @@ export class SolarEngine {
   }
 
   /** Eased flight to a body; position and view both interpolate, then hand over to orbit mode. */
+  /**
+   * A camera path round `center` instead of the straight line between two points: the direction turns along the great circle, the distance changes by the same ratio
+   * every instant (so a zoom feels even, not a rush at the end), and a long turn swings a little wide, so the camera never cuts through the body it circles.
+   */
+  private arc(center: THREE.Vector3, p0: THREE.Vector3, p1: THREE.Vector3, k: number, out: THREE.Vector3): THREE.Vector3 {
+    const a = this.arcA.copy(p0).sub(center), b = this.arcB.copy(p1).sub(center);
+    const d0 = Math.max(a.length(), 1e-9), d1 = Math.max(b.length(), 1e-9);
+    a.divideScalar(d0); b.divideScalar(d1);
+    const ang = Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1)), sin = Math.sin(ang);
+    if (sin < 1e-4) a.lerp(b, k); // (almost) the same direction, or straight opposite: no great circle to follow
+    else a.multiplyScalar(Math.sin((1 - k) * ang) / sin).addScaledVector(b, Math.sin(k * ang) / sin);
+    a.normalize();
+    const dist = Math.exp(Math.log(d0) + (Math.log(d1) - Math.log(d0)) * k) * (1 + 0.3 * Math.sin(Math.PI * k) * Math.min(1, ang / Math.PI));
+    return out.copy(center).addScaledVector(a, dist);
+  }
+  private arcA = new THREE.Vector3();
+  private arcB = new THREE.Vector3();
+
   private updateFlight(dt: number): void {
     const fl = this.flight!;
     fl.t += dt;
-    const k = ease(Math.min(1, fl.t / fl.dur));
+    const k = (this.world === 'mars' ? glide : ease)(Math.min(1, fl.t / fl.dur));
     const dest = this.tmp.copy(fl.target.world).add(fl.offset);
-    this.camera.position.lerpVectors(fl.p0, dest, k);
+    if (this.world === 'mars') this.arc(fl.target.world, fl.p0, dest, k, this.camera.position);
+    else this.camera.position.lerpVectors(fl.p0, dest, k);
     this.mat.lookAt(dest, fl.target.world, this.tmp2.set(0, 1, 0));
     this.tmpQ.setFromRotationMatrix(this.mat);
     this.camera.quaternion.slerpQuaternions(fl.q0, this.tmpQ, k);

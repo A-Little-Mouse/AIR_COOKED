@@ -1,3 +1,5 @@
+> **Historical notes.** The expedition page, the solar-system explorer (planets, Earth, Moon, satellites) and the planet models were removed in the 2026-11-15 cleanup; the explorer is now the Mars system only. Parts of this file describe them as they were.
+
 # Handoff — Lunar Trace / "Retrieval" game
 
 Paste this file's path into a new session ("read lunar-trace/docs/handoff.md and continue") to pick up where we left off.

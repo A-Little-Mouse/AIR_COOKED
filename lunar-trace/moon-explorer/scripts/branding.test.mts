@@ -11,10 +11,10 @@ const read = (p: string): string => readFileSync(join(root, p), 'utf8')
 
 // The values the live viewer shows today.
 assert.equal(PRODUCT_NAME, 'SkyLumi')
-assert.equal(PAGE_TITLE, 'Lunar Trace · The Moon')
+assert.equal(PAGE_TITLE, 'Relict · The Moon')
 assert.equal(SITE_URL, 'https://skylumi.org/3d-moon/')
-assert.equal(BRAND_LINE, 'Lunar Trace · The Moon')
-assert.equal(MADE_BY, 'Lunar Trace is built on 3D Moon by SkyLumi Labs (AGPL-3.0).')
+assert.equal(BRAND_LINE, 'Relict · The Moon')
+assert.equal(MADE_BY, 'Relict is built on 3D Moon by SkyLumi Labs (AGPL-3.0).')
 assert.equal(PROCESSED_BY, 'SkyLumi')
 assert.equal(RENDERING_MODEL_CREDIT, 'SkyLumi rendering model')
 assert.equal(new URL(SITE_URL).protocol, 'https:')

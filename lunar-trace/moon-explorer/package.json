@@ -17,9 +17,7 @@
     "test:extract-sldem": "node --import tsx scripts/extract-sldem-wide.test.mts"
   },
   "dependencies": {
-    "@sentry/browser": "10.76.2",
     "astronomy-engine": "2.1.19",
-    "posthog-js": "1.438.21",
     "three": "0.186.1"
   },
   "devDependencies": {

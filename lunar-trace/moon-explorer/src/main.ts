@@ -1,4 +1,3 @@
-import { mountStory } from './ui/story'
 import { mountReviewLabel } from './ui/reviewLabel'
 import { handleMemoryWarning } from './native/memoryWarning'
 import { PRESSURE_PENDING_MS, pressureStep, tileRebuildLayers } from './quality/pressure'
@@ -583,7 +582,8 @@ const hitShareDefault: 'off' | 'motion' | 'always' = quality.detected.cls === 'd
 /** The Quality sheet's preset over the device class: pixel-ratio caps and motion caps (`?motioncaps=` still forces the caps for an A/B). */
 let knobs = motionKnobs(quality.profile, getQuality().preset)
 const motionCapsParam = new URLSearchParams(location.search).get('motioncaps')
-const motionCapsFor = (): boolean => motionCapsParam === null ? !!knobs.motionCaps : motionCapsParam === '1'
+// Lunar Trace: the cheaper terrain march during camera motion (flights, drags) is on for every class, not only phones; `?motioncaps=0` turns it off.
+const motionCapsFor = (): boolean => motionCapsParam === null ? true : motionCapsParam === '1'
 let motionCapsOn = motionCapsFor()
 // `?fixedshare=0..0.95` overrides the class's motion cost model for an A/B (0 = the pure pixel-count model).
 setFixedShare(params.get('fixedshare') !== null ? Number(params.get('fixedshare')) : knobs.motionFixedShare ?? 0)
@@ -5234,14 +5234,16 @@ const FIXED_APPROACH_MS = 1500
  * roll blend from the current pose. Then one monotone descent to the ground-level end view. No separate fly-to, no hover. SITE_DROP_MS is the
  * apex-to-end time at the altitude zoom law's pace; the time is SITE_DROP_MS_PER_END_DOUBLING per doubling of the height down to the end (a start above the apex takes longer, 14 s from 12 R).
  */
-const SITE_DROP_MS = 11000
+/** Lunar Trace: the flight down to a landing site runs this much faster than upstream's pace. */
+const SITE_SPEEDUP = 1.3
+const SITE_DROP_MS = 11000 / SITE_SPEEDUP
 /** The drop's time from the apex is this per doubling of the height down to the end altitude (about 6e-4 R), not under SITE_DROP_MIN_MS: 1.5 R up takes 11 s. */
 const SITE_END_ALT_EST = 6e-4
-const SITE_DROP_MS_PER_END_DOUBLING = 1000
-const SITE_DROP_MIN_MS = 6000
-const SITE_CLIMB_MS_PER_DOUBLING = 900
-const SITE_CLIMB_MS_MIN = 900
-const SITE_CLIMB_MS_MAX = 4000
+const SITE_DROP_MS_PER_END_DOUBLING = 1000 / SITE_SPEEDUP
+const SITE_DROP_MIN_MS = 6000 / SITE_SPEEDUP
+const SITE_CLIMB_MS_PER_DOUBLING = 900 / SITE_SPEEDUP
+const SITE_CLIMB_MS_MIN = 900 / SITE_SPEEDUP
+const SITE_CLIMB_MS_MAX = 4000 / SITE_SPEEDUP
 const SITE_AT_APEX_OCTAVES = 0.1
 /** How fast the camera follows a lowered floor down (ms). */
 interface Descent { /** The previous frame's time, the slowed clock's scale (1 = real time) and the camera distance last drawn (radii), for the lag. */ last?: number; scale?: number; u?: number; lagDist?: number; t0: number; from: Pose | null; alt0: number; fov1: number; /** Length in ms and the share of it the sideways slide takes: a trip from another site (190 km from Apollo 11 to Apollo 17) is longer and slower to cross. */ ms: number; slide: number; /** A pin's quick descent (Moment.fixed). */ fast?: boolean; /** The Apollo 11 pin's drop from the apex (its distance from the centre, radii) and the climb to it from a low start (ms). */ apex?: number; climbMs?: number; prefetched?: boolean; /** The apex used (distance, radii): the camera's own when it is already between SITE_FUNNEL_DIST and SITE_APEX_DIST. */ apexDist?: number; /** The progress at which the path meets SITE_FUNNEL_DIST, and the creep's gain. */ uFunnel?: number; gate?: number; /** Its length when it is not FIXED_DESCENT_MS, ms. */ msFixed?: number; /** Apollo 17's arrival: the descent hands over to ground mode (pendingLanding) at ARRIVAL_HANDOVER_U, still moving. `holdAt` is when the path first reached its end (or, for a direct arrival, when it began waiting for the module). `replay`: the explicit "fly there again": the whole arrival, never the direct glide from low and close. */ landing?: boolean; holdAt?: number; replay?: boolean }
@@ -6340,7 +6342,6 @@ let pinsApi: ReturnType<typeof mountPins> | null = null
 /** First-visit hotspots (ui/firstHotspots*.ts): made only for a first load, and its DOM only once the intro has landed. */
 let firstHotspotsApi: FirstHotspotsApi | null = null
 let labelsApi: ReturnType<typeof mountLabels> | null = null
-let storyApi: ReturnType<typeof mountStory> | null = null
 let routesApi: ReturnType<typeof mountRoutes> | null = null
 /** The Apollo paths (descent line, landing dot, "tap the line" label) are not part of the visitor's views: they draw in free views only in the archive or when the debug sheet's toggle is on. A fly-along started by `routes.play` still shows its own line. */
 let routesShown = ARCHIVE
@@ -6662,7 +6663,29 @@ function flyToCoverage(lon: number, lat: number, siteId: string | null): boolean
 let pinShown: { h: Hotspot; /** The caption title: the place, and the date when the move sets the clock. */ title: string; lon: number; lat: number; at: number; moving: boolean } | null = null
 /** Home's caption waits for the picture: the Home line stays hidden until the move home has arrived. */
 let homeCaptionHeld = false
-function playPin(h: Hotspot): void {
+/**
+ * Lunar Trace: one click on Apollo 17 must end on the ground. If the flight there settles and the ground view is still not open (it used to
+ * take a second click), the same step runs once more by itself. Any other pin or list action cancels it.
+ */
+let groundNetToken = 0
+function groundSafetyNet(): void {
+  const t = ++groundNetToken
+  let idle = 0
+  const poll = (n: number): void => {
+    if (t !== groundNetToken || n > 160) return
+    if (groundMode?.active) return
+    idle = (tween || descent || flight || journey.state) ? 0 : idle + 1
+    if (idle >= 3) {
+      const h = hotspotList.find((x) => x.id === 'pin-apollo17-eye')
+      if (h && patchState === 'ready') playPin(h, true)
+      return
+    }
+    window.setTimeout(() => poll(n + 1), 500)
+  }
+  window.setTimeout(() => poll(0), 1500)
+}
+function playPin(h: Hotspot, retry = false): void {
+  if (!retry) groundNetToken++
   // Lunar Trace: one tap on Apollo 17 goes the whole way down to the eye-level ground view (it used to stop at the site and need a second tap).
   if (h.id === 'pin-apollo17') { const eye = hotspotList.find((x) => x.id === 'pin-apollo17-eye'); if (eye) h = eye }
   firstHotspotsApi?.noteFlight(h.id)
@@ -6677,6 +6700,7 @@ function playPin(h: Hotspot): void {
   playMoment(h, false)
   // The Apollo 17 eye-level pin is the list's "Eye level" step, not an entry of its own.
   navApi?.noteSelected(h.id === 'pin-apollo17-eye' ? { kind: 'ground', id: 'eye' } : { kind: 'pin', id: h.id })
+  if (h.id === 'pin-apollo17-eye' && !retry) groundSafetyNet()
   // The caption is visible in the first frame after the tap and holds for the whole move.
   // Owner 2026-10-07: no date or time on the main view. The Time sheet show it; the caption names the place only.
   const when = h.time()
@@ -7014,9 +7038,13 @@ function startDeferredLoads(): void {
   } else announce()
   // The Gazetteer table (9,080 names) is a lazy chunk, fetched after the Moon is on screen; the label search, close-up names and centre caption read it once it lands.
   // Lunar Trace: a few seconds later still, so the first tiles and maps have the bandwidth first (the label search and the flight prefetch load it on demand).
-  setTimeout(() => void loadGazetteer().catch(() => undefined), 12_000)
-  // Telemetry (src/telemetry): a dynamic import after the first frame, and only in a build made with a key. Without one this line is dead code.
-  if (import.meta.env.VITE_SENTRY_DSN || import.meta.env.VITE_POSTHOG_KEY) setTimeout(() => void import('./telemetry/boot').then((m) => m.startTelemetry(canvas, api)).catch(() => undefined), 2000)
+  // Lunar Trace: only when the Labels layer is on (it is off by default, and in the main page's background); the flight prefetch loads it on demand too.
+  if (labelsApi?.isOn()) setTimeout(() => void loadGazetteer().catch(() => undefined), 12_000)
+  // Lunar Trace: a service worker (public/sw.js) keeps the terrain and imagery tiles on the device, so a second visit does not download them again.
+  if (import.meta.env.PROD && !STILL && 'serviceWorker' in navigator) {
+    const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/'
+    void navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => undefined)
+  }
   if (maps.height.pending) loadHeight().then(applyHeights).catch((e: unknown) => fail(`Could not load the heights: ${String((e as Error)?.message ?? e)}`))
   else { api.heightsReady = true; api.heightsReadyAt = api.firstFrameAt }
   earthLoading?.then(() => { api.earthReadyAt = performance.now() }).catch((e: unknown) => console.warn('Earth maps unavailable:', String((e as Error)?.message ?? e)))
@@ -7213,9 +7241,6 @@ async function init(): Promise<void> {
       // ‹ at Eye level on the Apollo 17 ground climbs out over the site (#10); the card offers the flight again as its own chip.
       onGround: onApollo17Ground,
     })
-    // Lunar Trace: the Apollo 17 story, a Story button on the bar.
-    storyApi = mountStory(document.getElementById('ui') as HTMLElement, { run: runNavAction, onGround: onApollo17Ground, home: () => goHome() })
-    bar.addItem({ id: 'story', label: 'Story', ariaLabel: 'Play the Apollo 17 story', icon: tablerIcon('playerPlay'), order: 15, onClick: () => storyApi?.start() })
     // The Labels layer (src/ui/labels.ts): off by default, the bar's Labels button (and ?labels=1) turns it on.
     labelsApi = mountLabels(document.getElementById('ui') as HTMLElement, {
       select: flyToShownLabel,
@@ -7224,7 +7249,7 @@ async function init(): Promise<void> {
     }, params.get('labels') === '1')
     const labelsBtn = bar.addItem({ id: 'labels', label: 'Labels', ariaLabel: 'Names on the Moon', icon: tablerIcon('mapPin'), order: 20, onClick: () => labelsApi?.setOn(!labelsApi.isOn()) })
     labelsBtn.setAttribute('aria-pressed', String(labelsApi.isOn()))
-    labelsApi.onChange((on) => { labelsBtn.setAttribute('aria-pressed', String(on)); if (!on) setHighlight(null, true); updateLabelsDom(); markDirty() })
+    labelsApi.onChange((on) => { labelsBtn.setAttribute('aria-pressed', String(on)); if (!on) setHighlight(null, true); else void loadGazetteer().catch(() => undefined); updateLabelsDom(); markDirty() })
     // Credits in the More sheet too (with Quality and Relief), beside the brand line's own link: it presses that link, so the panel and its five-press secret stay one thing (hud.ts).
     bar.addItem({ id: 'credits', label: 'Credits', ariaLabel: 'About, credits and sources', icon: tablerIcon('infoCircle'), order: 56, overflow: true, onClick: () => document.querySelector<HTMLButtonElement>('#credit .credit-link')?.click() })
   }
