@@ -1,6 +1,2 @@
-# AIR_COOKED
-Nasa Space App
+#RELICT
 
-Rules:
-SanskarDhital-SD
-ShreyashMaskey-SM

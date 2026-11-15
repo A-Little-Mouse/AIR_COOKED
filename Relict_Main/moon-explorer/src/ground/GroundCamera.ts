@@ -16,10 +16,12 @@ export const MIN_AGL_FLY = 0.5
 /** Eye height of the walking camera, metres (a suited astronaut's eye is about 1.7 m). */
 export const EYE_HEIGHT_M = 1.7
 export const WALK_SPEED = 1.4
-export const WALK_SPEED_FAST = 5
-/** The Moon's surface gravity, m/s^2, and the take-off speed of a jump (about 1 m high and 2.2 s in the air). */
+export const WALK_SPEED_FAST = 3.5
+/** Time constant (s) with which the walking speed builds up to, and eases off from, the target: a suited body has inertia. */
+export const WALK_RESPONSE_S = 0.2
+/** The Moon's surface gravity, m/s^2, and the take-off speed of a jump (about 0.5 m high and 1.5 s in the air, like Apollo's hops). */
 export const MOON_G = 1.62
-export const JUMP_SPEED = 1.8
+export const JUMP_SPEED = 1.25
 /** Pitch limits, deg above the horizon. */
 const PITCH_LIM = 89.5
 const smooth = (x: number): number => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t) }
@@ -204,8 +206,11 @@ export class GroundCamera {
           ty = (Math.cos(h) * k.fwd - Math.sin(h) * k.right) / n * sp
           this.onInput?.()
         }
-        this.vx = tx
-        this.vy = ty
+        // Speed builds up and eases off instead of snapping (a suited body has inertia).
+        const a = 1 - Math.exp(-dt / WALK_RESPONSE_S)
+        this.vx += (tx - this.vx) * a
+        this.vy += (ty - this.vy) * a
+        if (!want && Math.hypot(this.vx, this.vy) < 0.01) this.vx = this.vy = 0
       }
       if (this.vx || this.vy) {
         this.view.pos.x += this.vx * dt

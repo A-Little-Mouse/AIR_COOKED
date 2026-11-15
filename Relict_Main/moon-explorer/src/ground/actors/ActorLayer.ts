@@ -11,7 +11,8 @@ import { type Placement, attitudeQuat, fitPlacement, PLACEMENT_INVALID_Z } from 
 const ROVER_LENGTH_M = 3.1
 const enu = (e: number, n: number, u: number): THREE.Vector3 => new THREE.Vector3(e, u, -n)
 
-interface Shadow { mesh: THREE.Mesh }
+/** `mesh` is the soft blob (kept hidden); `catcher` is a transparent plane under the rover that shows the Sun's real shadow map on the ground. */
+interface Shadow { mesh: THREE.Mesh; catcher: THREE.Mesh }
 
 export class ActorLayer {
   readonly scene = new THREE.Scene()
@@ -64,7 +65,15 @@ export class ActorLayer {
     mesh.renderOrder = 2
     mesh.frustumCulled = false
     this.scene.add(mesh)
-    return { mesh }
+    // The rover's real cast shadow: a plane the size of the Sun's shadow box that draws only where the rover blocks the light.
+    const catcher = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.6, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, toneMapped: false }))
+    catcher.rotation.x = -Math.PI / 2
+    catcher.receiveShadow = true
+    catcher.renderOrder = 1
+    catcher.frustumCulled = false
+    catcher.visible = false
+    this.scene.add(catcher)
+    return { mesh, catcher }
   }
 
   private loaderFor(base: string): GLTFLoader {
@@ -169,6 +178,12 @@ export class ActorLayer {
       r.root.visible = camDistM < ActorLayer.ROVER_DRAW_M
       r.root.updateMatrixWorld(true)
       this.placeBlob(r.shadow, r.e, r.n, p.z, 0)
+      // The catcher lies in the plane the wheels were fitted to, a hair above the ground.
+      const q = attitudeQuat(p)
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(q)
+      r.shadow.catcher.quaternion.copy(q).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2))
+      r.shadow.catcher.position.set(r.e, p.z, -r.n).addScaledVector(up, 0.03)
+      r.shadow.catcher.visible = true
     })
   }
 
@@ -188,7 +203,11 @@ export class ActorLayer {
     const elev = Math.max(0.05, Math.min(1.4, Math.asin(Math.max(0, Math.min(1, sunFrame.z)))))
     this.sunElev = elev
     const sh = Math.max(0.0, Math.min(0.6, sunShare * 0.6))
-    for (const r of this.rovers) (r.shadow.mesh.material as THREE.MeshBasicMaterial).opacity = sh
+    for (const r of this.rovers) {
+      (r.shadow.mesh.material as THREE.MeshBasicMaterial).opacity = sh
+      ;(r.shadow.catcher.material as THREE.ShadowMaterial).opacity = Math.min(0.75, sunShare * 0.75)
+      r.shadow.catcher.visible = !!r.placed && r.root.visible && sunShare > 0.01
+    }
   }
   private sunElev = 0.2
 

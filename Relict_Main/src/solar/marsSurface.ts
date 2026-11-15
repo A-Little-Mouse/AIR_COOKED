@@ -19,6 +19,12 @@ export function marsHeight(x: number, z: number): number {
 }
 
 // The Mars ground scene: terrain, rocks, sky, lander and a walking camera.
+// Mars surface gravity (m/s^2); a suited hop of about 0.5 m, over a second in the air; walking and bounding speeds (m/s).
+const MARS_G = 3.71;
+const MARS_JUMP = 1.9;
+const MARS_WALK = 1.2;
+const MARS_RUN = 3;
+
 export class MarsSurfaceScene {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(38, 1, 0.05, 3000);
@@ -28,6 +34,9 @@ export class MarsSurfaceScene {
   private pitch = 0;
   private jumpY = 0;
   private vy = 0;
+  // Horizontal velocity (m/s, world x and z): it builds up and eases off, and is kept in the air.
+  private vx = 0;
+  private vz = 0;
 
   constructor() {
     this.scene.background = this.skyTexture();
@@ -121,13 +130,24 @@ export class MarsSurfaceScene {
   walk(dt: number, forward: number, strafe: number, run: boolean, jump: boolean): void {
     if (!this.manual && !forward && !strafe && !jump) return;
     this.enterManual();
-    const v = (run ? 4 : 1.4) * dt;
     const c = this.camera.position;
-    c.x += (-Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * v;
-    c.z += (-Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * v;
-    if (jump && this.jumpY === 0 && this.vy === 0) this.vy = 3;
+    const airborne = this.jumpY > 0 || this.vy > 0;
+    if (!airborne) {
+      // On the ground the speed eases toward the held keys' target (a suited body has inertia); in the air it is kept.
+      const n = Math.hypot(forward, strafe) || 1;
+      const sp = (run ? MARS_RUN : MARS_WALK) / n;
+      const tx = (-Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * sp;
+      const tz = (-Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * sp;
+      const a = 1 - Math.exp(-dt / 0.2);
+      this.vx += (tx - this.vx) * a;
+      this.vz += (tz - this.vz) * a;
+      if (!forward && !strafe && Math.hypot(this.vx, this.vz) < 0.01) this.vx = this.vz = 0;
+    }
+    c.x += this.vx * dt;
+    c.z += this.vz * dt;
+    if (jump && !airborne) this.vy = MARS_JUMP;
     if (this.vy !== 0 || this.jumpY > 0) {
-      this.vy -= 3.71 * dt;
+      this.vy -= MARS_G * dt;
       this.jumpY = Math.max(0, this.jumpY + this.vy * dt);
       if (this.jumpY === 0) this.vy = 0;
     }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { Vector3 } from 'three'
-import { EYE_HEIGHT_M, GroundCamera, JUMP_SPEED, MOON_G, WALK_SPEED } from '../src/ground/GroundCamera.ts'
+import { EYE_HEIGHT_M, GroundCamera, JUMP_SPEED, MOON_G, WALK_SPEED, WALK_RESPONSE_S } from '../src/ground/GroundCamera.ts'
 
 // First-person walking (Relict): eased walking, lunar jump, eye follows the ground.
 const view = (headingDeg: number) => ({ pos: new Vector3(0, 0, 3), headingDeg, pitchDeg: -5, rollDeg: 0, tanHalf: Math.tan(20 * Math.PI / 180) })
@@ -15,12 +15,16 @@ const run = (cam: GroundCamera, seconds: number, dt = 0.016): void => { for (let
   // W: walks at once along the heading (north), at walking speed
   cam.keys.fwd = 1
   run(cam, 2)
-  assert.ok(Math.abs(cam.view.pos.y - WALK_SPEED * 2) < 0.05 && Math.abs(cam.view.pos.x) < 1e-6, `walks along the heading: ${cam.view.pos.y}`)
+  assert.ok(Math.abs(cam.view.pos.y - (WALK_SPEED * 2 - WALK_SPEED * WALK_RESPONSE_S)) < 0.05 && Math.abs(cam.view.pos.x) < 1e-6, `walks along the heading: ${cam.view.pos.y}`)
   // let go: it stops
   cam.keys.fwd = 0
   const y0 = cam.view.pos.y
+  run(cam, 1.5)
+  const slide = cam.view.pos.y - y0
+  assert.ok(slide > 0.05 && slide < WALK_SPEED * WALK_RESPONSE_S * 1.3, `eases to a stop instead of halting dead: ${slide}`)
+  const y1 = cam.view.pos.y
   run(cam, 0.5)
-  assert.ok(Math.abs(cam.view.pos.y - y0) < 0.03, 'stops when the key is released')
+  assert.ok(Math.abs(cam.view.pos.y - y1) < 0.001, 'stopped')
 }
 
 {
