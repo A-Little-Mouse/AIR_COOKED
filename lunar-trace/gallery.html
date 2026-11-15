@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#08090d" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Spacecraft Gallery — Relict</title>
+    <link rel="stylesheet" href="/src/gallery/gallery.css" />
+  </head>
+  <body>
+    <aside class="panel side">
+      <a class="back-link" href="/">← Relict</a>
+      <h1>Spacecraft</h1>
+      <div id="list"></div>
+    </aside>
+    <main id="stage"></main>
+    <section class="panel info">
+      <div class="type" id="cat"></div>
+      <h2 id="name"></h2>
+      <p class="desc" id="desc"></p>
+      <div class="hint">drag to rotate · scroll to zoom</div>
+    </section>
+    <div id="status" class="status" hidden></div>
+    <script type="module" src="/src/gallery/gallery.ts"></script>
+  </body>
+</html>

@@ -6661,6 +6661,8 @@ let pinShown: { h: Hotspot; /** The caption title: the place, and the date when 
 /** Home's caption waits for the picture: the Home line stays hidden until the move home has arrived. */
 let homeCaptionHeld = false
 function playPin(h: Hotspot): void {
+  // Lunar Trace: one tap on Apollo 17 goes the whole way down to the eye-level ground view (it used to stop at the site and need a second tap).
+  if (h.id === 'pin-apollo17') { const eye = hotspotList.find((x) => x.id === 'pin-apollo17-eye'); if (eye) h = eye }
   firstHotspotsApi?.noteFlight(h.id)
   // A tap on a pin is the visitor asking for this place now: the idle prefetch steps aside for what the move itself needs.
   if (TILE_BASE) prefetcherFor(TILE_BASE).cancel('idle')

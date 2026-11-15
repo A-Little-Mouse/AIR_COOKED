@@ -76,6 +76,19 @@ const lerpTo = (target: number, prev: number, f: number) => target + (prev - tar
  *    to the distance to the nearest body, so you slow down automatically as you approach one.
  *  - Click a body, label or list entry to fly to it.
  */
+/** A soft white-to-warm radial glare sprite. */
+function makeSunGlare(): THREE.Sprite {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 256;
+  const g = cv.getContext('2d')!;
+  const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0, 'rgba(255,252,240,1)'); grad.addColorStop(0.06, 'rgba(255,244,215,.9)'); grad.addColorStop(0.2, 'rgba(255,214,160,.32)'); grad.addColorStop(0.5, 'rgba(255,190,130,.08)'); grad.addColorStop(1, 'rgba(255,190,130,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false }));
+}
+
 export class SolarEngine {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -136,7 +149,7 @@ export class SolarEngine {
 
     // The Sun lights everything with no distance falloff (like Eyes), so the outer planets stay readable.
     this.scene.add(new THREE.PointLight(0xfff1dc, SUN_LIGHT, 0, 0));
-    this.scene.add(new THREE.AmbientLight(0x1a2236, 0.6));
+    this.scene.add(new THREE.AmbientLight(0x1a2236, this.world === 'mars' ? 1.8 : 0.6)); // Mars: the night side stays faintly visible, as on the Moon page
 
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
@@ -178,8 +191,9 @@ export class SolarEngine {
       anchor.add(pivot);
       anchor.userData.pivot = pivot;
       if (def.type === 'star') {
-        const glow = makeGlow();
-        glow.scale.setScalar(def.radiusKm * 6);
+        // From Mars the Sun is a tiny disc, so the Mars world draws a plain radial glare around it (the solar-system glow texture has a hole sized for the full-size Sun).
+        const glow = this.world === 'mars' ? makeSunGlare() : makeGlow();
+        glow.scale.setScalar(def.radiusKm * (this.world === 'mars' ? 50 : 6));
         anchor.add(glow);
       }
       const pick = new THREE.Mesh(pickGeo, pickMat); // invisible click target, enlarged with distance

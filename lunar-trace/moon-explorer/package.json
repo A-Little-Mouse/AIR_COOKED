@@ -1,0 +1,36 @@
+{
+  "name": "lunar-trace-moon",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The realistic Moon for Relict: a trimmed copy of 3D Moon by SkyLumi Labs (AGPL-3.0-only), with a walking camera, a jump and the Apollo 17 rover added. See ../README.md.",
+  "scripts": {
+    "dev": "vite --port 5192 --strictPort",
+    "dev:hosted": "MOON_REMOTE_BASE=${MOON_MIRROR:-https://storage.googleapis.com/skylumi-moon-serve-b7f804/moon/} vite --port 5192 --strictPort",
+    "build": "tsc --noEmit && vite build && node scripts/assert-dist-public.mjs",
+    "build:bundle": "vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview --port 5191 --strictPort",
+    "test": "node scripts/run-tests.mjs",
+    "test:mid-sample": "node --import tsx scripts/mid-sample.test.mts",
+    "test:wide-height": "node --import tsx scripts/wide-height.test.mts",
+    "test:extract-sldem": "node --import tsx scripts/extract-sldem-wide.test.mts"
+  },
+  "dependencies": {
+    "@sentry/browser": "10.76.2",
+    "astronomy-engine": "2.1.19",
+    "posthog-js": "1.438.21",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/three": "0.186.0",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15",
+    "typescript": "6.0.3",
+    "vite": "8.3.5"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
