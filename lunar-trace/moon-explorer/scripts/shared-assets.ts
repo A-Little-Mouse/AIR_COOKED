@@ -3,11 +3,12 @@
 // This names the files instead.
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 export const SHARED_ASSETS = ['moon-maps.json', 'moon-color-4k.jpg', 'moon-height-4k.bin.gz', 'asteroid-stars.json']
 const REL = 'shared-assets'
 /** The repository root: scripts/.. */
-const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 export function missingSharedAssets(root: string = REPO_ROOT): string[] {
   return SHARED_ASSETS.map((f) => path.join(REL, f)).filter((f) => !fs.existsSync(path.join(root, f)))
